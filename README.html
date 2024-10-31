@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>3D Chase Game</title>
+    <title>3D Chase Game with Hazards</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -18,7 +18,7 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Player, Enemy, and Floor
+        // Player, Enemy, Floor
         const player = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({color: 0x00ff00}));
         const enemy = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({color: 0xff0000}));
         const floor = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshBasicMaterial({color: 0xaaaaaa}));
@@ -34,12 +34,42 @@
 
         camera.position.z = 5;
 
+        // Hazards
+        const hazards = [];
+        for (let i = 0; i < 5; i++) {
+            const hazard = new THREE.Mesh(
+                new THREE.BoxGeometry(1, 1, 1),
+                new THREE.MeshBasicMaterial({ color: 0xff9900 })
+            );
+            hazard.position.set((Math.random() - 0.5) * 20, 0.5, (Math.random() - 0.5) * 20);
+            hazards.push(hazard);
+            scene.add(hazard);
+        }
+
         // Controls
         const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
         let playerSpeed = 0.1;
 
         document.addEventListener("keydown", (event) => keys[event.key] = true);
         document.addEventListener("keyup", (event) => keys[event.key] = false);
+
+        // Reset Function
+        function resetGame() {
+            player.position.set(0, 0.5, 0);
+            enemy.position.set(5, 0.5, 5);
+        }
+
+        // Collision Detection
+        function checkCollisionWithHazards() {
+            const playerBox = new THREE.Box3().setFromObject(player);
+            for (const hazard of hazards) {
+                const hazardBox = new THREE.Box3().setFromObject(hazard);
+                if (playerBox.intersectsBox(hazardBox)) {
+                    resetGame();
+                    break;
+                }
+            }
+        }
 
         // Game Loop
         function animate() {
@@ -60,6 +90,9 @@
             camera.position.set(player.position.x, player.position.y + 5, player.position.z + 5);
             camera.lookAt(player.position);
 
+            // Check for Collision with Hazards
+            checkCollisionWithHazards();
+
             // Render the scene
             renderer.render(scene, camera);
         }
@@ -68,3 +101,4 @@
     </script>
 </body>
 </html>
+
