@@ -1,8 +1,9 @@
-<!DOCTYPE html>
+
+  <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>3D Chase Game with Hazards</title>
+    <title>3D Chase Game</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -18,33 +19,19 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Player, Enemy, Floor
+        // Player, Enemy, Floor, Obstacles, and Walls
         const player = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({color: 0x00ff00}));
         const enemy = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({color: 0xff0000}));
         const floor = new THREE.Mesh(new THREE.PlaneGeometry(50, 50), new THREE.MeshBasicMaterial({color: 0xaaaaaa}));
 
-        // Position objects
         player.position.y = 0.5;
         enemy.position.set(5, 0.5, 5);
         floor.rotation.x = -Math.PI / 2;
 
-        scene.add(player);
-        scene.add(enemy);
-        scene.add(floor);
+        scene.add(player, enemy, floor);
 
+        // Camera positioning
         camera.position.z = 5;
-
-        // Hazards
-        const hazards = [];
-        for (let i = 0; i < 5; i++) {
-            const hazard = new THREE.Mesh(
-                new THREE.BoxGeometry(1, 1, 1),
-                new THREE.MeshBasicMaterial({ color: 0xff9900 })
-            );
-            hazard.position.set((Math.random() - 0.5) * 20, 0.5, (Math.random() - 0.5) * 20);
-            hazards.push(hazard);
-            scene.add(hazard);
-        }
 
         // Controls
         const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
@@ -53,22 +40,36 @@
         document.addEventListener("keydown", (event) => keys[event.key] = true);
         document.addEventListener("keyup", (event) => keys[event.key] = false);
 
-        // Reset Function
+        // Obstacles
+        const obstacles = [];
+        for (let i = 0; i < 3; i++) {
+            const obstacle = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({color: 0xffa500}));
+            obstacle.position.set(Math.random() * 10 - 5, 0.5, Math.random() * 10 - 5);
+            obstacles.push(obstacle);
+            scene.add(obstacle);
+        }
+
+        // Walls
+        const walls = [];
+        for (let i = 0; i < 4; i++) {
+            const wall = new THREE.Mesh(new THREE.BoxGeometry(10, 2, 1), new THREE.MeshBasicMaterial({color: 0x808080}));
+            wall.position.set(i % 2 === 0 ? i - 1 : 0, 1, i < 2 ? -5 + i * 10 : 0);
+            wall.rotation.y = i < 2 ? 0 : Math.PI / 2;
+            walls.push(wall);
+            scene.add(wall);
+        }
+
+        // Reset Game Function
         function resetGame() {
             player.position.set(0, 0.5, 0);
             enemy.position.set(5, 0.5, 5);
         }
 
-        // Collision Detection
-        function checkCollisionWithHazards() {
-            const playerBox = new THREE.Box3().setFromObject(player);
-            for (const hazard of hazards) {
-                const hazardBox = new THREE.Box3().setFromObject(hazard);
-                if (playerBox.intersectsBox(hazardBox)) {
-                    resetGame();
-                    break;
-                }
-            }
+        // Collision Detection Helper
+        function checkCollision(obj1, obj2) {
+            const obj1Box = new THREE.Box3().setFromObject(obj1);
+            const obj2Box = new THREE.Box3().setFromObject(obj2);
+            return obj1Box.intersectsBox(obj2Box);
         }
 
         // Game Loop
@@ -76,10 +77,21 @@
             requestAnimationFrame(animate);
 
             // Player Movement
-            if (keys.ArrowUp) player.position.z -= playerSpeed;
-            if (keys.ArrowDown) player.position.z += playerSpeed;
-            if (keys.ArrowLeft) player.position.x -= playerSpeed;
-            if (keys.ArrowRight) player.position.x += playerSpeed;
+            const nextPosition = player.position.clone();
+            if (keys.ArrowUp) nextPosition.z -= playerSpeed;
+            if (keys.ArrowDown) nextPosition.z += playerSpeed;
+            if (keys.ArrowLeft) nextPosition.x -= playerSpeed;
+            if (keys.ArrowRight) nextPosition.x += playerSpeed;
+
+            // Wall Collision Check
+            let collidingWithWall = false;
+            for (const wall of walls) {
+                if (checkCollision(nextPosition, wall)) {
+                    collidingWithWall = true;
+                    break;
+                }
+            }
+            if (!collidingWithWall) player.position.copy(nextPosition);
 
             // Enemy Chase Logic
             const chaseSpeed = 0.02;
@@ -90,8 +102,12 @@
             camera.position.set(player.position.x, player.position.y + 5, player.position.z + 5);
             camera.lookAt(player.position);
 
-            // Check for Collision with Hazards
-            checkCollisionWithHazards();
+            // Check for collision with obstacles
+            for (const obstacle of obstacles) {
+                if (checkCollision(player, obstacle)) {
+                    resetGame();
+                }
+            }
 
             // Render the scene
             renderer.render(scene, camera);
@@ -101,4 +117,3 @@
     </script>
 </body>
 </html>
-
