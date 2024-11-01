@@ -42,9 +42,8 @@
 
         // Mouse Look Controls
         document.addEventListener("mousemove", (event) => {
-            player.rotation.y -= event.movementX * mouseSensitivity;
-            camera.rotation.x -= event.movementY * mouseSensitivity;
-            camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x)); // Limit pitch
+            player.rotation.y -= event.movementX * mouseSensitivity; // Yaw (left-right)
+            camera.rotation.x -= event.movementY * mouseSensitivity; // Pitch (up-down)
         });
 
         document.addEventListener("keydown", (event) => { keys[event.key.toLowerCase()] = true; });
@@ -179,6 +178,7 @@
     </script>
 </body>
 </html>
+
 
 
 
