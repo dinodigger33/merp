@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>3D Chase Game</title>
+    <title>3D First-Person Chase Game</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -19,12 +19,12 @@
         document.body.appendChild(renderer.domElement);
 
         // Player, Enemy, Floor
-        const player = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({color: 0x00ff00}));
+        const player = new THREE.Object3D();
         const enemy = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshBasicMaterial({color: 0xff0000}));
         const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshBasicMaterial({color: 0xaaaaaa}));
 
         // Set object positions
-        player.position.y = 0.5;
+        player.position.y = 1.5; // Camera height
         enemy.position.set(5, 0.5, 5);
         floor.rotation.x = -Math.PI / 2;
 
@@ -32,14 +32,23 @@
         scene.add(enemy);
         scene.add(floor);
 
-        camera.position.z = 5;
+        camera.position.y = 1.5;
+        player.add(camera); // Attach camera to player for first-person view
 
         // Controls
-        const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+        const keys = { w: false, s: false, a: false, d: false };
         let playerSpeed = 0.1;
+        let mouseSensitivity = 0.002;
 
-        document.addEventListener("keydown", (event) => keys[event.key] = true);
-        document.addEventListener("keyup", (event) => keys[event.key] = false);
+        // Mouse Look Controls
+        document.addEventListener("mousemove", (event) => {
+            player.rotation.y -= event.movementX * mouseSensitivity;
+            camera.rotation.x -= event.movementY * mouseSensitivity;
+            camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x)); // Limit pitch
+        });
+
+        document.addEventListener("keydown", (event) => { keys[event.key.toLowerCase()] = true; });
+        document.addEventListener("keyup", (event) => { keys[event.key.toLowerCase()] = false; });
 
         // Obstacles Array and Creation
         const obstacles = [];
@@ -70,26 +79,26 @@
             const floorSize = 15;
 
             // Left Border
-            const leftBorder = new THREE.Mesh(new THREE.BoxGeometry(borderThickness, 1, 30), borderMaterial);
-            leftBorder.position.set(-floorSize, 0.5, 0);
+            const leftBorder = new THREE.Mesh(new THREE.BoxGeometry(borderThickness, 3, 30), borderMaterial);
+            leftBorder.position.set(-floorSize, 1.5, 0);
             borders.push(leftBorder);
             scene.add(leftBorder);
 
             // Right Border
-            const rightBorder = new THREE.Mesh(new THREE.BoxGeometry(borderThickness, 1, 30), borderMaterial);
-            rightBorder.position.set(floorSize, 0.5, 0);
+            const rightBorder = new THREE.Mesh(new THREE.BoxGeometry(borderThickness, 3, 30), borderMaterial);
+            rightBorder.position.set(floorSize, 1.5, 0);
             borders.push(rightBorder);
             scene.add(rightBorder);
 
             // Top Border
-            const topBorder = new THREE.Mesh(new THREE.BoxGeometry(30, 1, borderThickness), borderMaterial);
-            topBorder.position.set(0, 0.5, -floorSize);
+            const topBorder = new THREE.Mesh(new THREE.BoxGeometry(30, 3, borderThickness), borderMaterial);
+            topBorder.position.set(0, 1.5, -floorSize);
             borders.push(topBorder);
             scene.add(topBorder);
 
             // Bottom Border
-            const bottomBorder = new THREE.Mesh(new THREE.BoxGeometry(30, 1, borderThickness), borderMaterial);
-            bottomBorder.position.set(0, 0.5, floorSize);
+            const bottomBorder = new THREE.Mesh(new THREE.BoxGeometry(30, 3, borderThickness), borderMaterial);
+            bottomBorder.position.set(0, 1.5, floorSize);
             borders.push(bottomBorder);
             scene.add(bottomBorder);
         }
@@ -98,7 +107,7 @@
 
         // Reset Game
         function resetGame() {
-            player.position.set(0, 0.5, 0);
+            player.position.set(0, 1.5, 0);
             enemy.position.set(5, 0.5, 5);
         }
 
@@ -135,29 +144,29 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // Temporary player position for movement testing
+            // Calculate movement direction
+            const forward = new THREE.Vector3();
+            camera.getWorldDirection(forward);
+            forward.y = 0; // Only move along the XZ plane
+            forward.normalize();
+
+            const right = new THREE.Vector3();
+            right.crossVectors(camera.up, forward).normalize();
+
+            // Update player position
             const newPosition = player.position.clone();
+            if (keys.w) newPosition.add(forward.multiplyScalar(playerSpeed));
+            if (keys.s) newPosition.add(forward.multiplyScalar(-playerSpeed));
+            if (keys.a) newPosition.add(right.multiplyScalar(-playerSpeed));
+            if (keys.d) newPosition.add(right.multiplyScalar(playerSpeed));
 
-            // Check movement direction
-            if (keys.ArrowUp) newPosition.z -= playerSpeed;
-            if (keys.ArrowDown) newPosition.z += playerSpeed;
-            if (keys.ArrowLeft) newPosition.x -= playerSpeed;
-            if (keys.ArrowRight) newPosition.x += playerSpeed;
-
-            // Update player position if no collision with borders
             player.position.copy(newPosition);
-            if (checkCollisions()) {
-                player.position.copy(newPosition); // Revert if hitting a border
-            }
+            if (checkCollisions()) player.position.copy(newPosition); // Revert if hitting a border
 
             // Enemy Chase Logic
-            const chaseSpeed = 0.09;
+            const chaseSpeed = 0.05;
             const direction = new THREE.Vector3().subVectors(player.position, enemy.position).normalize();
             enemy.position.add(direction.multiplyScalar(chaseSpeed));
-
-            // Camera follows the player
-            camera.position.set(player.position.x, player.position.y + 5, player.position.z + 5);
-            camera.lookAt(player.position);
 
             // Check for collisions with obstacles and enemy
             checkCollisions();
