@@ -151,7 +151,7 @@
             }
 
             // Enemy Chase Logic
-            const chaseSpeed = 0.08;
+            const chaseSpeed = 0.010;
             const direction = new THREE.Vector3().subVectors(player.position, enemy.position).normalize();
             enemy.position.add(direction.multiplyScalar(chaseSpeed));
 
