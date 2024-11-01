@@ -32,7 +32,7 @@
         scene.add(enemy);
         scene.add(floor);
 
-        camera.position.z = 0;
+        camera.position.z = 5;
 
         // Controls
         const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
@@ -61,6 +61,41 @@
 
         createObstacles();
 
+        // Create Invisible Borders
+        const borders = [];
+        const borderMaterial = new THREE.MeshBasicMaterial({visible: false});
+
+        function createBorders() {
+            const borderThickness = 0.5;
+            const floorSize = 15;
+
+            // Left Border
+            const leftBorder = new THREE.Mesh(new THREE.BoxGeometry(borderThickness, 1, 30), borderMaterial);
+            leftBorder.position.set(-floorSize, 0.5, 0);
+            borders.push(leftBorder);
+            scene.add(leftBorder);
+
+            // Right Border
+            const rightBorder = new THREE.Mesh(new THREE.BoxGeometry(borderThickness, 1, 30), borderMaterial);
+            rightBorder.position.set(floorSize, 0.5, 0);
+            borders.push(rightBorder);
+            scene.add(rightBorder);
+
+            // Top Border
+            const topBorder = new THREE.Mesh(new THREE.BoxGeometry(30, 1, borderThickness), borderMaterial);
+            topBorder.position.set(0, 0.5, -floorSize);
+            borders.push(topBorder);
+            scene.add(topBorder);
+
+            // Bottom Border
+            const bottomBorder = new THREE.Mesh(new THREE.BoxGeometry(30, 1, borderThickness), borderMaterial);
+            bottomBorder.position.set(0, 0.5, floorSize);
+            borders.push(bottomBorder);
+            scene.add(bottomBorder);
+        }
+
+        createBorders();
+
         // Reset Game
         function resetGame() {
             player.position.set(0, 0.5, 0);
@@ -85,20 +120,35 @@
             if (playerBox.intersectsBox(enemyBox)) {
                 resetGame();
             }
-        }
 
-        // Boundaries for the invisible walls
-        const floorSize = 15;  // Half of the floor's 30x30 size
+            // Check collision with borders
+            for (const border of borders) {
+                const borderBox = new THREE.Box3().setFromObject(border);
+                if (playerBox.intersectsBox(borderBox)) {
+                    return true;  // Collision with border detected
+                }
+            }
+            return false; // No collision with borders
+        }
 
         // Game Loop
         function animate() {
             requestAnimationFrame(animate);
 
-            // Player Movement
-            if (keys.ArrowUp && player.position.z - playerSpeed > -floorSize) player.position.z -= playerSpeed;
-            if (keys.ArrowDown && player.position.z + playerSpeed < floorSize) player.position.z += playerSpeed;
-            if (keys.ArrowLeft && player.position.x - playerSpeed > -floorSize) player.position.x -= playerSpeed;
-            if (keys.ArrowRight && player.position.x + playerSpeed < floorSize) player.position.x += playerSpeed;
+            // Temporary player position for movement testing
+            const newPosition = player.position.clone();
+
+            // Check movement direction
+            if (keys.ArrowUp) newPosition.z -= playerSpeed;
+            if (keys.ArrowDown) newPosition.z += playerSpeed;
+            if (keys.ArrowLeft) newPosition.x -= playerSpeed;
+            if (keys.ArrowRight) newPosition.x += playerSpeed;
+
+            // Update player position if no collision with borders
+            player.position.copy(newPosition);
+            if (checkCollisions()) {
+                player.position.copy(newPosition); // Revert if hitting a border
+            }
 
             // Enemy Chase Logic
             const chaseSpeed = 0.05;
@@ -120,6 +170,7 @@
     </script>
 </body>
 </html>
+
 
 
 
