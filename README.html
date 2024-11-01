@@ -92,7 +92,7 @@
             if (keys.ArrowRight) player.position.x += playerSpeed;
 
             // Enemy Chase Logic
-            const chaseSpeed = 0.02;
+            const chaseSpeed = 0.05;
             const direction = new THREE.Vector3().subVectors(player.position, enemy.position).normalize();
             enemy.position.add(direction.multiplyScalar(chaseSpeed));
 
