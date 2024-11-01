@@ -79,6 +79,12 @@
                     break;
                 }
             }
+
+            // Check collision with enemy
+            const enemyBox = new THREE.Box3().setFromObject(enemy);
+            if (playerBox.intersectsBox(enemyBox)) {
+                resetGame();
+            }
         }
 
         // Game Loop
@@ -100,7 +106,7 @@
             camera.position.set(player.position.x, player.position.y + 5, player.position.z + 5);
             camera.lookAt(player.position);
 
-            // Check for collisions with obstacles
+            // Check for collisions with obstacles and enemy
             checkCollisions();
 
             // Render the scene
@@ -111,3 +117,4 @@
     </script>
 </body>
 </html>
+
