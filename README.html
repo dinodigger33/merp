@@ -87,15 +87,18 @@
             }
         }
 
+        // Boundaries for the invisible walls
+        const floorSize = 15;  // Half of the floor's 30x30 size
+
         // Game Loop
         function animate() {
             requestAnimationFrame(animate);
 
             // Player Movement
-            if (keys.ArrowUp) player.position.z -= playerSpeed;
-            if (keys.ArrowDown) player.position.z += playerSpeed;
-            if (keys.ArrowLeft) player.position.x -= playerSpeed;
-            if (keys.ArrowRight) player.position.x += playerSpeed;
+            if (keys.ArrowUp && player.position.z - playerSpeed > -floorSize) player.position.z -= playerSpeed;
+            if (keys.ArrowDown && player.position.z + playerSpeed < floorSize) player.position.z += playerSpeed;
+            if (keys.ArrowLeft && player.position.x - playerSpeed > -floorSize) player.position.x -= playerSpeed;
+            if (keys.ArrowRight && player.position.x + playerSpeed < floorSize) player.position.x += playerSpeed;
 
             // Enemy Chase Logic
             const chaseSpeed = 0.05;
@@ -117,4 +120,6 @@
     </script>
 </body>
 </html>
+
+
 
