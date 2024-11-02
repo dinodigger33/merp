@@ -36,9 +36,10 @@
         player.add(camera); // Attach camera to player for first-person view
 
         // Controls
-        const keys = { w: false, s: false, a: false, d: false };
+        const keys = { w: false, s: false, a: false, d: false, shift: false };
         let playerSpeed = 0.1;
         let mouseSensitivity = 0.002;
+        let originalRotationY = 0;
 
         // Mouse Look Controls
         document.addEventListener("mousemove", (event) => {
@@ -46,8 +47,14 @@
             camera.rotation.x -= event.movementY * mouseSensitivity; // Pitch (up-down)
         });
 
-        document.addEventListener("keydown", (event) => { keys[event.key.toLowerCase()] = true; });
-        document.addEventListener("keyup", (event) => { keys[event.key.toLowerCase()] = false; });
+        document.addEventListener("keydown", (event) => { 
+            keys[event.key.toLowerCase()] = true;
+            if (event.key === "Shift") originalRotationY = player.rotation.y; // Save original rotation
+        });
+
+        document.addEventListener("keyup", (event) => { 
+            keys[event.key.toLowerCase()] = false; 
+        });
 
         // Obstacles Array and Creation
         const obstacles = [];
@@ -170,6 +177,13 @@
             // Check for collisions with obstacles and enemy
             checkCollisions();
 
+            // Look behind if Shift is pressed
+            if (keys.shift) {
+                player.rotation.y = originalRotationY + Math.PI;
+            } else {
+                player.rotation.y = originalRotationY;
+            }
+
             // Render the scene
             renderer.render(scene, camera);
         }
@@ -178,8 +192,4 @@
     </script>
 </body>
 </html>
-
-
-
-
 
