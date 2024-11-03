@@ -36,19 +36,20 @@
         player.add(camera); // Attach camera to player for first-person view
 
         // Controls
-        const keys = { w: false, s: false, a: false, d: false };
+        const keys = { w: false, s: false, a: false, d: false, shift: false };
         let playerSpeed = 0.1;
         let mouseSensitivity = 0.002;
-
+        
         // Variables for smoother rotation
-        let pitch = 0; // Up-down rotation limit
-        let yaw = 0; // Left-right rotation (360 allowed)
+        let targetRotationY = 0;
+        let targetRotationX = 0;
+        let rotationLerpFactor = 0.1; // Controls smoothness (higher = smoother, slower)
 
         // Mouse Look Controls
         document.addEventListener("mousemove", (event) => {
-            yaw -= event.movementX * mouseSensitivity;
-            pitch -= event.movementY * mouseSensitivity;
-            pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch)); // Limit pitch (up-down rotation) to avoid flipping
+            targetRotationY -= event.movementX * mouseSensitivity;
+            targetRotationX -= event.movementY * mouseSensitivity;
+            targetRotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetRotationX)); // Limit pitch
         });
 
         document.addEventListener("keydown", (event) => { 
@@ -180,9 +181,9 @@
             // Check for collisions with obstacles and enemy
             checkCollisions();
 
-            // Apply smooth yaw and pitch rotation to the player and camera
-            player.rotation.y = yaw;
-            camera.rotation.x = pitch;
+            // Smoothly interpolate player rotation to the target rotation
+            player.rotation.y += (targetRotationY - player.rotation.y) * rotationLerpFactor;
+            camera.rotation.x += (targetRotationX - camera.rotation.x) * rotationLerpFactor;
 
             // Render the scene
             renderer.render(scene, camera);
