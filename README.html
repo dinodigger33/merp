@@ -33,7 +33,7 @@
         scene.add(floor);
 
         // Initial camera position
-        camera.position.set(0, 5, -8);
+        camera.position.set(0, 5, -8);  // Set the initial camera position behind and above the player
 
         // Controls
         const keys = { w: false, s: false, a: false, d: false };
@@ -42,7 +42,7 @@
 
         // Variables for smoother rotation
         let targetRotationY = 0;
-        let rotationLerpFactor = 0.1;
+        let rotationLerpFactor = 0.1; // Controls smoothness of rotation
 
         // Mouse Look Controls
         document.addEventListener("mousemove", (event) => {
@@ -151,15 +151,15 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // Calculate forward and right directions based on player rotation
+            // Calculate movement direction
             const forward = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y)).normalize();
-            const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+            const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), forward).normalize();
 
-            // Update player position with respect to direction
-            if (keys.w) player.position.add(forward.clone().multiplyScalar(playerSpeed));
-            if (keys.s) player.position.add(forward.clone().multiplyScalar(-playerSpeed));
-            if (keys.d) player.position.add(right.clone().multiplyScalar(playerSpeed));
-            if (keys.a) player.position.add(right.clone().multiplyScalar(-playerSpeed));
+            // Update player position
+            if (keys.w) player.position.add(forward.multiplyScalar(playerSpeed));
+            if (keys.s) player.position.add(forward.multiplyScalar(-playerSpeed));
+            if (keys.a) player.position.add(right.multiplyScalar(-playerSpeed));
+            if (keys.d) player.position.add(right.multiplyScalar(playerSpeed));
 
             // Smoothly rotate player towards the target rotation
             player.rotation.y += (targetRotationY - player.rotation.y) * rotationLerpFactor;
