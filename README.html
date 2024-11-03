@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>3D First-Person Chase Game</title>
+    <title>3D Third-Person Chase Game</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -19,12 +19,12 @@
         document.body.appendChild(renderer.domElement);
 
         // Player, Enemy, Floor
-        const player = new THREE.Object3D();
+        const player = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({color: 0x00ff00}));
         const enemy = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshBasicMaterial({color: 0xff0000}));
         const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshBasicMaterial({color: 0xaaaaaa}));
 
         // Set object positions
-        player.position.y = 1.5; // Camera height
+        player.position.y = 0.5;
         enemy.position.set(5, 0.5, 5);
         floor.rotation.x = -Math.PI / 2;
 
@@ -32,24 +32,21 @@
         scene.add(enemy);
         scene.add(floor);
 
-        camera.position.y = 1.5;
-        player.add(camera); // Attach camera to player for first-person view
+        // Initial camera position
+        camera.position.set(0, 5, -8);  // Set the initial camera position behind and above the player
 
         // Controls
-        const keys = { w: false, s: false, a: false, d: false, shift: false };
+        const keys = { w: false, s: false, a: false, d: false };
         let playerSpeed = 0.1;
         let mouseSensitivity = 0.002;
-        
+
         // Variables for smoother rotation
         let targetRotationY = 0;
-        let targetRotationX = 0;
-        let rotationLerpFactor = 0.1; // Controls smoothness (higher = smoother, slower)
+        let rotationLerpFactor = 0.1; // Controls smoothness of rotation
 
         // Mouse Look Controls
         document.addEventListener("mousemove", (event) => {
             targetRotationY -= event.movementX * mouseSensitivity;
-            targetRotationX -= event.movementY * mouseSensitivity;
-            targetRotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetRotationX)); // Limit pitch
         });
 
         document.addEventListener("keydown", (event) => { 
@@ -117,7 +114,7 @@
 
         // Reset Game
         function resetGame() {
-            player.position.set(0, 1.5, 0);
+            player.position.set(0, 0.5, 0);
             enemy.position.set(5, 0.5, 5);
         }
 
@@ -155,23 +152,17 @@
             requestAnimationFrame(animate);
 
             // Calculate movement direction
-            const forward = new THREE.Vector3();
-            camera.getWorldDirection(forward);
-            forward.y = 0; // Only move along the XZ plane
-            forward.normalize();
-
-            const right = new THREE.Vector3();
-            right.crossVectors(camera.up, forward).normalize();
+            const forward = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y)).normalize();
+            const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), forward).normalize();
 
             // Update player position
-            const newPosition = player.position.clone();
-            if (keys.w) newPosition.add(forward.multiplyScalar(playerSpeed));
-            if (keys.s) newPosition.add(forward.multiplyScalar(-playerSpeed));
-            if (keys.a) newPosition.add(right.multiplyScalar(-playerSpeed));
-            if (keys.d) newPosition.add(right.multiplyScalar(playerSpeed));
+            if (keys.w) player.position.add(forward.multiplyScalar(playerSpeed));
+            if (keys.s) player.position.add(forward.multiplyScalar(-playerSpeed));
+            if (keys.a) player.position.add(right.multiplyScalar(-playerSpeed));
+            if (keys.d) player.position.add(right.multiplyScalar(playerSpeed));
 
-            player.position.copy(newPosition);
-            if (checkCollisions()) player.position.copy(newPosition); // Revert if hitting a border
+            // Smoothly rotate player towards the target rotation
+            player.rotation.y += (targetRotationY - player.rotation.y) * rotationLerpFactor;
 
             // Enemy Chase Logic
             const chaseSpeed = 0.05;
@@ -181,9 +172,10 @@
             // Check for collisions with obstacles and enemy
             checkCollisions();
 
-            // Smoothly interpolate player rotation to the target rotation
-            player.rotation.y += (targetRotationY - player.rotation.y) * rotationLerpFactor;
-            camera.rotation.x += (targetRotationX - camera.rotation.x) * rotationLerpFactor;
+            // Camera follows the player from a third-person perspective
+            const cameraOffset = new THREE.Vector3(0, 5, -8).applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+            camera.position.copy(player.position).add(cameraOffset);
+            camera.lookAt(player.position);
 
             // Render the scene
             renderer.render(scene, camera);
