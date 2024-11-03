@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>3D Chase Game with Outlines</title>
+    <title>3D Third-Person Chase Game</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -10,12 +10,8 @@
 </head>
 <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://threejs.org/examples/jsm/postprocessing/EffectComposer.js"></script>
-    <script src="https://threejs.org/examples/jsm/postprocessing/RenderPass.js"></script>
-    <script src="https://threejs.org/examples/jsm/postprocessing/OutlinePass.js"></script>
-
     <script>
-        // Basic Setup
+        // Scene, Camera, Renderer
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer();
@@ -26,71 +22,97 @@
         const player = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({color: 0x00ff00}));
         const enemy = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshBasicMaterial({color: 0xff0000}));
         const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshBasicMaterial({color: 0xaaaaaa}));
-        floor.rotation.x = -Math.PI / 2;
-        scene.add(player, enemy, floor);
 
-        // Initial positions
-        player.position.set(0, 0.5, 0);
+        // Set object positions
+        player.position.y = 0.5;
         enemy.position.set(5, 0.5, 5);
+        floor.rotation.x = -Math.PI / 2;
 
-        // Effect Composer and Outline Pass setup
-        const composer = new THREE.EffectComposer(renderer);
-        const renderPass = new THREE.RenderPass(scene, camera);
-        composer.addPass(renderPass);
+        scene.add(player);
+        scene.add(enemy);
+        scene.add(floor);
 
-        const outlinePass = new THREE.OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
-        composer.addPass(outlinePass);
-        outlinePass.edgeStrength = 2.5;
-        outlinePass.edgeThickness = 1.0;
-        outlinePass.visibleEdgeColor.set('#000000');
-        outlinePass.hiddenEdgeColor.set('#000000');
+        // Initial camera position
+        camera.position.set(0, 5, -8);
 
-        // Obstacles setup and adding to outline
+        // Controls
+        const keys = { w: false, s: false, a: false, d: false };
+        let playerSpeed = 0.1;
+        let mouseSensitivity = 0.002;
+
+        // Variables for smoother rotation
+        let targetRotationY = 0;
+        let rotationLerpFactor = 0.1;
+
+        // Mouse Look Controls
+        document.addEventListener("mousemove", (event) => {
+            targetRotationY -= event.movementX * mouseSensitivity;
+        });
+
+        document.addEventListener("keydown", (event) => { 
+            keys[event.key.toLowerCase()] = true;
+        });
+
+        document.addEventListener("keyup", (event) => { 
+            keys[event.key.toLowerCase()] = false; 
+        });
+
+        // Obstacles Array and Creation
         const obstacles = [];
+        const obstacleMaterial = new THREE.MeshBasicMaterial({color: 0xffa500});
+
+        // Create a few orange obstacle boxes
         function createObstacles() {
-            const obstacleMaterial = new THREE.MeshBasicMaterial({color: 0xffa500});
             for (let i = 0; i < 5; i++) {
                 const obstacle = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), obstacleMaterial);
-                obstacle.position.set((Math.random() - 0.5) * 20, 0.5, (Math.random() - 0.5) * 20);
+                obstacle.position.set(
+                    (Math.random() - 0.5) * 20,
+                    0.5,
+                    (Math.random() - 0.5) * 20
+                );
                 obstacles.push(obstacle);
                 scene.add(obstacle);
-                outlinePass.selectedObjects.push(obstacle); 
             }
         }
+
         createObstacles();
 
-        // Adding player and enemy to outline selection
-        outlinePass.selectedObjects.push(player, enemy);
-
-        // Invisible Borders to constrain player
+        // Create Invisible Borders
         const borders = [];
         const borderMaterial = new THREE.MeshBasicMaterial({visible: false});
-        const borderSize = 15;
 
         function createBorders() {
-            const thickness = 0.5;
-            const positions = [
-                [-borderSize, 0, 0, 'z'], [borderSize, 0, 0, 'z'], [0, 0, -borderSize, 'x'], [0, 0, borderSize, 'x']
-            ];
+            const borderThickness = 0.5;
+            const floorSize = 15;
 
-            positions.forEach(([x, y, z, axis]) => {
-                const border = new THREE.Mesh(
-                    axis === 'x' ? new THREE.BoxGeometry(30, 3, thickness) : new THREE.BoxGeometry(thickness, 3, 30),
-                    borderMaterial
-                );
-                border.position.set(x, 1.5, z);
-                borders.push(border);
-                scene.add(border);
-            });
+            // Left Border
+            const leftBorder = new THREE.Mesh(new THREE.BoxGeometry(borderThickness, 3, 30), borderMaterial);
+            leftBorder.position.set(-floorSize, 1.5, 0);
+            borders.push(leftBorder);
+            scene.add(leftBorder);
+
+            // Right Border
+            const rightBorder = new THREE.Mesh(new THREE.BoxGeometry(borderThickness, 3, 30), borderMaterial);
+            rightBorder.position.set(floorSize, 1.5, 0);
+            borders.push(rightBorder);
+            scene.add(rightBorder);
+
+            // Top Border
+            const topBorder = new THREE.Mesh(new THREE.BoxGeometry(30, 3, borderThickness), borderMaterial);
+            topBorder.position.set(0, 1.5, -floorSize);
+            borders.push(topBorder);
+            scene.add(topBorder);
+
+            // Bottom Border
+            const bottomBorder = new THREE.Mesh(new THREE.BoxGeometry(30, 3, borderThickness), borderMaterial);
+            bottomBorder.position.set(0, 1.5, floorSize);
+            borders.push(bottomBorder);
+            scene.add(bottomBorder);
         }
+
         createBorders();
 
-        // Control Setup
-        const keys = { w: false, s: false, a: false, d: false };
-        document.addEventListener("keydown", (event) => keys[event.key.toLowerCase()] = true);
-        document.addEventListener("keyup", (event) => keys[event.key.toLowerCase()] = false);
-
-        // Function to reset game state
+        // Reset Game
         function resetGame() {
             player.position.set(0, 0.5, 0);
             enemy.position.set(5, 0.5, 5);
@@ -100,60 +122,66 @@
         function checkCollisions() {
             const playerBox = new THREE.Box3().setFromObject(player);
 
+            // Check collision with each obstacle
             for (const obstacle of obstacles) {
                 const obstacleBox = new THREE.Box3().setFromObject(obstacle);
                 if (playerBox.intersectsBox(obstacleBox)) {
                     resetGame();
-                    return;
+                    break;
                 }
             }
 
+            // Check collision with enemy
             const enemyBox = new THREE.Box3().setFromObject(enemy);
-            if (playerBox.intersectsBox(enemyBox)) resetGame();
+            if (playerBox.intersectsBox(enemyBox)) {
+                resetGame();
+            }
 
+            // Check collision with borders
             for (const border of borders) {
                 const borderBox = new THREE.Box3().setFromObject(border);
-                if (playerBox.intersectsBox(borderBox)) return true;
+                if (playerBox.intersectsBox(borderBox)) {
+                    return true;  // Collision with border detected
+                }
             }
-            return false;
+            return false; // No collision with borders
         }
 
-        // Game Loop and Movement
+        // Game Loop
         function animate() {
             requestAnimationFrame(animate);
 
+            // Calculate forward and right directions based on player rotation
             const forward = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y)).normalize();
             const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
 
-            if (keys.w) player.position.add(forward.clone().multiplyScalar(0.1));
-            if (keys.s) player.position.add(forward.clone().multiplyScalar(-0.1));
-            if (keys.d) player.position.add(right.clone().multiplyScalar(0.1));
-            if (keys.a) player.position.add(right.clone().multiplyScalar(-0.1));
+            // Update player position with respect to direction
+            if (keys.w) player.position.add(forward.clone().multiplyScalar(playerSpeed));
+            if (keys.s) player.position.add(forward.clone().multiplyScalar(-playerSpeed));
+            if (keys.d) player.position.add(right.clone().multiplyScalar(playerSpeed));
+            if (keys.a) player.position.add(right.clone().multiplyScalar(-playerSpeed));
 
-            if (checkCollisions()) player.position.y = 0.5; // Prevent movement outside boundaries
+            // Smoothly rotate player towards the target rotation
+            player.rotation.y += (targetRotationY - player.rotation.y) * rotationLerpFactor;
 
+            // Enemy Chase Logic
             const chaseSpeed = 0.05;
             const direction = new THREE.Vector3().subVectors(player.position, enemy.position).normalize();
             enemy.position.add(direction.multiplyScalar(chaseSpeed));
 
+            // Check for collisions with obstacles and enemy
+            checkCollisions();
+
+            // Camera follows the player from a third-person perspective
             const cameraOffset = new THREE.Vector3(0, 5, -8).applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
             camera.position.copy(player.position).add(cameraOffset);
             camera.lookAt(player.position);
 
-            composer.render();
+            // Render the scene
+            renderer.render(scene, camera);
         }
 
         animate();
-
-        // Handle window resizing
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
-        });
     </script>
 </body>
 </html>
-
-
