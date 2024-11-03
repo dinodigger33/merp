@@ -39,20 +39,21 @@
         const keys = { w: false, s: false, a: false, d: false, shift: false };
         let playerSpeed = 0.1;
         let mouseSensitivity = 0.002;
-        let originalRotationY = 0;
-        let velocity = new THREE.Vector3(0, 0, 0); // Player velocity
-        const acceleration = 0.01;
-        const deceleration = 0.05;
+        
+        // Variables for smoother rotation
+        let targetRotationY = 0;
+        let targetRotationX = 0;
+        let rotationLerpFactor = 0.1; // Controls smoothness (higher = smoother, slower)
 
         // Mouse Look Controls
         document.addEventListener("mousemove", (event) => {
-            player.rotation.y -= event.movementX * mouseSensitivity; // Yaw (left-right)
-            camera.rotation.x -= event.movementY * mouseSensitivity; // Pitch (up-down)
+            targetRotationY -= event.movementX * mouseSensitivity;
+            targetRotationX -= event.movementY * mouseSensitivity;
+            targetRotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetRotationX)); // Limit pitch
         });
 
         document.addEventListener("keydown", (event) => { 
             keys[event.key.toLowerCase()] = true;
-            if (event.key === "Shift") originalRotationY = player.rotation.y; // Save original rotation
         });
 
         document.addEventListener("keyup", (event) => { 
@@ -162,32 +163,27 @@
             const right = new THREE.Vector3();
             right.crossVectors(camera.up, forward).normalize();
 
-            // Smooth movement logic
-            if (keys.w) velocity.add(forward.clone().multiplyScalar(acceleration));
-            if (keys.s) velocity.add(forward.clone().multiplyScalar(-acceleration));
-            if (keys.a) velocity.add(right.clone().multiplyScalar(-acceleration));
-            if (keys.d) velocity.add(right.clone().multiplyScalar(acceleration));
+            // Update player position
+            const newPosition = player.position.clone();
+            if (keys.w) newPosition.add(forward.multiplyScalar(playerSpeed));
+            if (keys.s) newPosition.add(forward.multiplyScalar(-playerSpeed));
+            if (keys.a) newPosition.add(right.multiplyScalar(-playerSpeed));
+            if (keys.d) newPosition.add(right.multiplyScalar(playerSpeed));
 
-            // Apply deceleration
-            velocity.multiplyScalar(1 - deceleration);
-
-            // Update player position based on velocity
-            player.position.add(velocity);
-
-            // Check for border collisions to prevent crossing
-            if (checkCollisions()) player.position.sub(velocity); // Revert if hitting a border
+            player.position.copy(newPosition);
+            if (checkCollisions()) player.position.copy(newPosition); // Revert if hitting a border
 
             // Enemy Chase Logic
             const chaseSpeed = 0.05;
             const direction = new THREE.Vector3().subVectors(player.position, enemy.position).normalize();
             enemy.position.add(direction.multiplyScalar(chaseSpeed));
 
-            // Look behind if Shift is pressed
-            if (keys.shift) {
-                player.rotation.y = originalRotationY + Math.PI;
-            } else {
-                player.rotation.y = originalRotationY;
-            }
+            // Check for collisions with obstacles and enemy
+            checkCollisions();
+
+            // Smoothly interpolate player rotation to the target rotation
+            player.rotation.y += (targetRotationY - player.rotation.y) * rotationLerpFactor;
+            camera.rotation.x += (targetRotationX - camera.rotation.x) * rotationLerpFactor;
 
             // Render the scene
             renderer.render(scene, camera);
@@ -197,5 +193,6 @@
     </script>
 </body>
 </html>
+
 
 
