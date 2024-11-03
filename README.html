@@ -15,43 +15,37 @@
     <script src="https://threejs.org/examples/jsm/postprocessing/OutlinePass.js"></script>
 
     <script>
-        // Scene, Camera, Renderer
+        // Basic Setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
+        // Player, Enemy, Floor
+        const player = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({color: 0x00ff00}));
+        const enemy = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshBasicMaterial({color: 0xff0000}));
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshBasicMaterial({color: 0xaaaaaa}));
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(player, enemy, floor);
+
+        // Initial positions
+        player.position.set(0, 0.5, 0);
+        enemy.position.set(5, 0.5, 5);
+
         // Effect Composer and Outline Pass setup
         const composer = new THREE.EffectComposer(renderer);
         const renderPass = new THREE.RenderPass(scene, camera);
         composer.addPass(renderPass);
 
-        // Floor and Objects
-        const player = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({color: 0x00ff00}));
-        const enemy = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshBasicMaterial({color: 0xff0000}));
-        const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshBasicMaterial({color: 0xaaaaaa}));
-        floor.rotation.x = -Math.PI / 2;
-
-        scene.add(player, enemy, floor);
-
-        // Set initial positions
-        player.position.set(0, 0.5, 0);
-        enemy.position.set(5, 0.5, 5);
-
-        // OutlinePass setup
         const outlinePass = new THREE.OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
-        outlinePass.selectedObjects = [player, enemy];
         composer.addPass(outlinePass);
-
-        outlinePass.edgeStrength = 2.5; // Outline width
-        outlinePass.edgeGlow = 0.0;
+        outlinePass.edgeStrength = 2.5;
         outlinePass.edgeThickness = 1.0;
-        outlinePass.pulsePeriod = 0;
         outlinePass.visibleEdgeColor.set('#000000');
         outlinePass.hiddenEdgeColor.set('#000000');
 
-        // Create obstacles and add to outline
+        // Obstacles setup and adding to outline
         const obstacles = [];
         function createObstacles() {
             const obstacleMaterial = new THREE.MeshBasicMaterial({color: 0xffa500});
@@ -65,7 +59,10 @@
         }
         createObstacles();
 
-        // Border Constraints
+        // Adding player and enemy to outline selection
+        outlinePass.selectedObjects.push(player, enemy);
+
+        // Invisible Borders to constrain player
         const borders = [];
         const borderMaterial = new THREE.MeshBasicMaterial({visible: false});
         const borderSize = 15;
@@ -88,24 +85,27 @@
         }
         createBorders();
 
-        // Controls and Player Movement
+        // Control Setup
         const keys = { w: false, s: false, a: false, d: false };
-        let playerSpeed = 0.1;
         document.addEventListener("keydown", (event) => keys[event.key.toLowerCase()] = true);
         document.addEventListener("keyup", (event) => keys[event.key.toLowerCase()] = false);
 
-        // Collision Detection with Obstacles, Enemy, and Borders
+        // Function to reset game state
         function resetGame() {
             player.position.set(0, 0.5, 0);
             enemy.position.set(5, 0.5, 5);
         }
 
+        // Collision Detection
         function checkCollisions() {
             const playerBox = new THREE.Box3().setFromObject(player);
 
             for (const obstacle of obstacles) {
                 const obstacleBox = new THREE.Box3().setFromObject(obstacle);
-                if (playerBox.intersectsBox(obstacleBox)) resetGame();
+                if (playerBox.intersectsBox(obstacleBox)) {
+                    resetGame();
+                    return;
+                }
             }
 
             const enemyBox = new THREE.Box3().setFromObject(enemy);
@@ -118,17 +118,17 @@
             return false;
         }
 
-        // Game Loop
+        // Game Loop and Movement
         function animate() {
             requestAnimationFrame(animate);
 
             const forward = new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y)).normalize();
             const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
 
-            if (keys.w) player.position.add(forward.clone().multiplyScalar(playerSpeed));
-            if (keys.s) player.position.add(forward.clone().multiplyScalar(-playerSpeed));
-            if (keys.d) player.position.add(right.clone().multiplyScalar(playerSpeed));
-            if (keys.a) player.position.add(right.clone().multiplyScalar(-playerSpeed));
+            if (keys.w) player.position.add(forward.clone().multiplyScalar(0.1));
+            if (keys.s) player.position.add(forward.clone().multiplyScalar(-0.1));
+            if (keys.d) player.position.add(right.clone().multiplyScalar(0.1));
+            if (keys.a) player.position.add(right.clone().multiplyScalar(-0.1));
 
             if (checkCollisions()) player.position.y = 0.5; // Prevent movement outside boundaries
 
@@ -145,7 +145,7 @@
 
         animate();
 
-        // Window Resize Handling
+        // Handle window resizing
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
@@ -155,4 +155,5 @@
     </script>
 </body>
 </html>
+
 
