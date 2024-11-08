@@ -1,5 +1,20 @@
-oc.flashMsg({
+{% flash %}
+    <div class="alert alert-{{ type }}">
+        {{ message }}
+    </div>
+{% endflash %}<form>
+    {% ajaxPartial 'flash-messages' %}
+
+    <label>Title</label>
+    <input name="title" />
+
+    <button
+        data-request="onSave"
+        data-request-update="{ flash-messages: true }">
+        Save
+    </button>
+</form>oc.flashMsg({
     message: 'Record has been successfully saved. This message will disappear in 1 second.',
     type: 'success',
-    interval: 9999
+    interval: 1
 });
