@@ -1,8 +1,21 @@
-// Select all buttons on the page and disable click events
-document.querySelectorAll("button").forEach(button => {
-  button.addEventListener("click", function(event) {
-    event.preventDefault(); // Prevent the default click behavior
-    event.stopPropagation(); // Stop the event from bubbling up
-    console.log("Button clicks are disabled.");
-  });
-});
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gorilla Tag - Simple Version</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <script src="game.js"></script>
+</body>
+</html>
