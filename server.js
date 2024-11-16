@@ -1,14 +1,13 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const path = require('path');
 
-// Create Express app
+// Create Express app and HTTP server
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve the chat UI
+// Serve the chat UI from a string
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -89,7 +88,7 @@ app.get('/', (req, res) => {
     `);
 });
 
-// Socket.IO connection
+// Handle WebSocket connections
 io.on('connection', (socket) => {
     console.log('A user connected');
 
