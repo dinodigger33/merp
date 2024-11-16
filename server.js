@@ -108,3 +108,4 @@ const PORT = 3000;
 server.listen(PORT, () => {
     console.log(`Chat app is running at http://localhost:${PORT}`);
 });
+node chat-app.js
