@@ -9,19 +9,38 @@ const asteroids = [];
 let score = 0;
 let isGameOver = false;
 
-// Controls
+// Player controls
 document.addEventListener('keydown', (e) => {
-  if (e.code === 'ArrowLeft' && player.x > 0) player.x -= player.speed;
-  if (e.code === 'ArrowRight' && player.x < canvas.width - player.width) player.x += player.speed;
+  if (e.code === 'ArrowLeft' && player.x > 0) {
+    player.x -= player.speed;
+  }
+  if (e.code === 'ArrowRight' && player.x < canvas.width - player.width) {
+    player.x += player.speed;
+  }
   if (e.code === 'Space') {
-    bullets.push({ x: player.x + player.width / 2 - 2.5, y: player.y, width: 5, height: 10, color: 'yellow', speed: 10 });
+    // Add a new bullet
+    bullets.push({
+      x: player.x + player.width / 2 - 2.5, // Center bullet relative to player
+      y: player.y,
+      width: 5,
+      height: 10,
+      color: 'yellow',
+      speed: 7,
+    });
   }
 });
 
-// Spawn asteroids
+// Spawn asteroids periodically
 function spawnAsteroid() {
-  const x = Math.random() * (canvas.width - 30);
-  asteroids.push({ x, y: 0, width: 30, height: 30, color: 'red', speed: 3 + Math.random() * 2 });
+  const x = Math.random() * (canvas.width - 30); // Random x position
+  asteroids.push({
+    x,
+    y: 0, // Start at the top
+    width: 30,
+    height: 30,
+    color: 'red',
+    speed: 3 + Math.random() * 2, // Slightly random speed
+  });
 }
 
 // Collision detection
@@ -34,7 +53,7 @@ function isColliding(rect1, rect2) {
   );
 }
 
-// Game loop
+// Main game loop
 function gameLoop() {
   if (isGameOver) return;
 
@@ -46,18 +65,22 @@ function gameLoop() {
   ctx.fillRect(player.x, player.y, player.width, player.height);
 
   // Update and draw bullets
-  bullets.forEach((bullet, index) => {
-    bullet.y -= bullet.speed;
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const bullet = bullets[i];
+    bullet.y -= bullet.speed; // Move bullet upward
     ctx.fillStyle = bullet.color;
     ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
 
     // Remove bullets that are off-screen
-    if (bullet.y + bullet.height < 0) bullets.splice(index, 1);
-  });
+    if (bullet.y + bullet.height < 0) {
+      bullets.splice(i, 1);
+    }
+  }
 
   // Update and draw asteroids
-  asteroids.forEach((asteroid, index) => {
-    asteroid.y += asteroid.speed;
+  for (let i = asteroids.length - 1; i >= 0; i--) {
+    const asteroid = asteroids[i];
+    asteroid.y += asteroid.speed; // Move asteroid downward
     ctx.fillStyle = asteroid.color;
     ctx.fillRect(asteroid.x, asteroid.y, asteroid.width, asteroid.height);
 
@@ -68,28 +91,32 @@ function gameLoop() {
       location.reload();
     }
 
-    // Remove asteroids that are off-screen
-    if (asteroid.y > canvas.height) asteroids.splice(index, 1);
-
     // Check for collision with bullets
-    bullets.forEach((bullet, bIndex) => {
+    for (let j = bullets.length - 1; j >= 0; j--) {
+      const bullet = bullets[j];
       if (isColliding(asteroid, bullet)) {
-        // Remove both the asteroid and the bullet
-        asteroids.splice(index, 1);
-        bullets.splice(bIndex, 1);
+        // Remove asteroid and bullet on collision
+        asteroids.splice(i, 1);
+        bullets.splice(j, 1);
 
-        // Update score
+        // Increase score
         score += 10;
         document.getElementById('score').textContent = `Score: ${score}`;
+        break;
       }
-    });
-  });
+    }
+
+    // Remove asteroids that are off-screen
+    if (asteroid.y > canvas.height) {
+      asteroids.splice(i, 1);
+    }
+  }
 
   // Request next frame
   requestAnimationFrame(gameLoop);
 }
 
-// Spawn asteroids at intervals
+// Spawn asteroids at regular intervals
 setInterval(spawnAsteroid, 1000);
 
 // Start the game loop
