@@ -1,51 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Space Shooter</title>
-  <style>
-    canvas {
-      display: block;
-      margin: 0 auto;
-      background: black;
-      border: 2px solid white;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: #202020;
-      color: white;
-    }
-  </style>
-</head>
-<body>
-  <h1>Space Shooter</h1>
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
-  <p id="score">Score: 0</p>
-  <script src="game.js"></script>
-</body>
-</html>
+// Canvas setup
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // Game settings
-const player = { x: 400, y: 500, width: 50, height: 50, color: 'blue' };
+const player = { x: 375, y: 520, width: 50, height: 50, color: 'blue', speed: 10 };
 const bullets = [];
 const asteroids = [];
 let score = 0;
+let isGameOver = false;
 
 // Controls
 document.addEventListener('keydown', (e) => {
-  if (e.code === 'ArrowLeft') player.x -= 20;
-  if (e.code === 'ArrowRight') player.x += 20;
-  if (e.code === 'Space') bullets.push({ x: player.x + 22, y: player.y - 10, width: 5, height: 10 });
+  if (e.code === 'ArrowLeft' && player.x > 0) player.x -= player.speed;
+  if (e.code === 'ArrowRight' && player.x < canvas.width - player.width) player.x += player.speed;
+  if (e.code === 'Space') {
+    bullets.push({ x: player.x + player.width / 2 - 2.5, y: player.y, width: 5, height: 10, color: 'yellow', speed: 10 });
+  }
 });
 
-// Asteroid spawning
+// Spawn asteroids
 function spawnAsteroid() {
   const x = Math.random() * (canvas.width - 30);
-  asteroids.push({ x, y: 0, width: 30, height: 30, color: 'white' });
+  asteroids.push({ x, y: 0, width: 30, height: 30, color: 'red', speed: 3 + Math.random() * 2 });
 }
 
 // Collision detection
@@ -60,6 +36,9 @@ function isColliding(rect1, rect2) {
 
 // Game loop
 function gameLoop() {
+  if (isGameOver) return;
+
+  // Clear canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Draw player
@@ -68,43 +47,50 @@ function gameLoop() {
 
   // Update and draw bullets
   bullets.forEach((bullet, index) => {
-    bullet.y -= 10;
-    ctx.fillStyle = 'yellow';
+    bullet.y -= bullet.speed;
+    ctx.fillStyle = bullet.color;
     ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
 
-    if (bullet.y < 0) bullets.splice(index, 1); // Remove off-screen bullets
+    // Remove bullets that are off-screen
+    if (bullet.y + bullet.height < 0) bullets.splice(index, 1);
   });
 
   // Update and draw asteroids
   asteroids.forEach((asteroid, index) => {
-    asteroid.y += 5;
+    asteroid.y += asteroid.speed;
     ctx.fillStyle = asteroid.color;
     ctx.fillRect(asteroid.x, asteroid.y, asteroid.width, asteroid.height);
 
-    // Check collision with player
+    // Check for collision with player
     if (isColliding(asteroid, player)) {
+      isGameOver = true;
       alert(`Game Over! Final Score: ${score}`);
       location.reload();
     }
 
-    // Check collision with bullets
+    // Remove asteroids that are off-screen
+    if (asteroid.y > canvas.height) asteroids.splice(index, 1);
+
+    // Check for collision with bullets
     bullets.forEach((bullet, bIndex) => {
       if (isColliding(asteroid, bullet)) {
+        // Remove both the asteroid and the bullet
         asteroids.splice(index, 1);
         bullets.splice(bIndex, 1);
+
+        // Update score
         score += 10;
         document.getElementById('score').textContent = `Score: ${score}`;
       }
     });
-
-    if (asteroid.y > canvas.height) asteroids.splice(index, 1); // Remove off-screen asteroids
   });
 
+  // Request next frame
   requestAnimationFrame(gameLoop);
 }
 
-// Spawn asteroids every second
+// Spawn asteroids at intervals
 setInterval(spawnAsteroid, 1000);
 
-// Start game
+// Start the game loop
 gameLoop();
