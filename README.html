@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Merp Kong</title>
+  <title>Donkey Kong Clone</title>
   <style>
     body {
       margin: 0;
@@ -25,13 +25,22 @@
     canvas.height = 600;
 
     // Game variables
-    let player = { x: 50, y: 500, width: 30, height: 50, dx: 0, dy: 0, speed: 5, jumpPower: 15, onGround: false };
-    let platforms = [
+    const gravity = 0.5;
+    let player = { 
+      x: 50, y: 500, 
+      width: 30, height: 50, 
+      dx: 0, dy: 0, 
+      speed: 5, jumpPower: 15, 
+      onGround: false 
+    };
+    const platforms = [
       { x: 0, y: 550, width: 800, height: 20 },
       { x: 100, y: 450, width: 200, height: 20 },
       { x: 400, y: 350, width: 300, height: 20 }
     ];
-    let barrels = [{ x: 700, y: 530, width: 20, height: 20, dx: -3 }];
+    const barrels = [
+      { x: 700, y: 530, width: 20, height: 20, dx: -3 }
+    ];
 
     // Input handling
     const keys = {};
@@ -51,34 +60,32 @@
       else if (keys['ArrowRight']) player.dx = player.speed;
       else player.dx = 0;
 
-      if (keys[' ']) {
-        if (player.onGround) {
-          player.dy = -player.jumpPower;
-          player.onGround = false;
-        }
+      if (keys[' '] && player.onGround) {
+        player.dy = -player.jumpPower;
+        player.onGround = false;
       }
 
-      // Gravity
-      player.dy += 0.5;
+      // Apply gravity
+      player.dy += gravity;
 
-      // Update position
+      // Update player position
       player.x += player.dx;
       player.y += player.dy;
 
-      // Collision detection
+      // Collision detection with platforms
       player.onGround = false;
-      platforms.forEach((platform) => {
+      for (const platform of platforms) {
         if (
           player.x < platform.x + platform.width &&
           player.x + player.width > platform.x &&
           player.y + player.height > platform.y &&
-          player.y + player.height - player.dy < platform.y
+          player.y + player.height - player.dy <= platform.y
         ) {
           player.y = platform.y - player.height;
           player.dy = 0;
           player.onGround = true;
         }
-      });
+      }
 
       // Barrels movement
       barrels.forEach((barrel) => {
@@ -87,13 +94,17 @@
           barrel.dx *= -1;
         }
       });
+
+      // Keep player within canvas bounds
+      if (player.x < 0) player.x = 0;
+      if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
     }
 
     function render() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Draw player
-      ctx.fillStyle = 'blue';
+      ctx.fillStyle = 'red';
       ctx.fillRect(player.x, player.y, player.width, player.height);
 
       // Draw platforms
