@@ -139,7 +139,7 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Draw player
-      ctx.fillStyle = 'red';
+      ctx.fillStyle = 'green';
       ctx.fillRect(player.x, player.y, player.width, player.height);
 
       // Draw platforms
@@ -149,13 +149,13 @@
       });
 
       // Draw barrels
-      ctx.fillStyle = 'blue';
+      ctx.fillStyle = 'red';
       barrels.forEach((barrel) => {
         ctx.fillRect(barrel.x, barrel.y, barrel.width, barrel.height);
       });
 
       // Draw goal
-      ctx.fillStyle = 'green';
+      ctx.fillStyle = 'purple';
       ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
     }
 
