@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>frankfurt run</title>
+  <title>Donkey Kong Clone</title>
   <style>
     body {
       margin: 0;
@@ -64,7 +64,7 @@
         ],
         goal: { x: 550, y: 200, width: 30, height: 30 }
       },
-      // Level 3 (Updated)
+      // Level 3
       {
         platforms: [
           { x: 0, y: 550, width: 800, height: 20 },
@@ -77,7 +77,40 @@
           { x: 500, y: 330, width: 20, height: 20, dx: 4 },
           { x: 300, y: 230, width: 20, height: 20, dx: -3 }
         ],
-        goal: { x: 620, y: 210, width: 30, height: 30 } // Goal closer to platform
+        goal: { x: 620, y: 210, width: 30, height: 30 }
+      },
+      // Level 4
+      {
+        platforms: [
+          { x: 0, y: 550, width: 800, height: 20 },
+          { x: 100, y: 450, width: 150, height: 20 },
+          { x: 300, y: 400, width: 150, height: 20 },
+          { x: 500, y: 300, width: 150, height: 20 },
+          { x: 650, y: 200, width: 100, height: 20 }
+        ],
+        barrels: [
+          { x: 700, y: 530, width: 20, height: 20, dx: -6 },
+          { x: 300, y: 380, width: 20, height: 20, dx: 5 },
+          { x: 150, y: 430, width: 20, height: 20, dx: -4 }
+        ],
+        goal: { x: 670, y: 160, width: 30, height: 30 }
+      },
+      // Level 5
+      {
+        platforms: [
+          { x: 0, y: 550, width: 800, height: 20 },
+          { x: 200, y: 500, width: 100, height: 20 },
+          { x: 350, y: 450, width: 100, height: 20 },
+          { x: 500, y: 400, width: 100, height: 20 },
+          { x: 650, y: 300, width: 100, height: 20 },
+          { x: 700, y: 200, width: 50, height: 20 }
+        ],
+        barrels: [
+          { x: 750, y: 530, width: 20, height: 20, dx: -7 },
+          { x: 400, y: 430, width: 20, height: 20, dx: 6 },
+          { x: 250, y: 480, width: 20, height: 20, dx: -5 }
+        ],
+        goal: { x: 720, y: 160, width: 30, height: 30 }
       }
     ];
 
@@ -155,59 +188,4 @@
         if (
           player.x < barrel.x + barrel.width &&
           player.x + player.width > barrel.x &&
-          player.y < barrel.y + barrel.height &&
-          player.y + player.height > barrel.y
-        ) {
-          loadLevel(currentLevel); // Restart level on collision
-        }
-      });
-
-      // Check if the player reaches the goal
-      if (
-        player.x < goal.x + goal.width &&
-        player.x + player.width > goal.x &&
-        player.y < goal.y + goal.height &&
-        player.y + player.height > goal.y
-      ) {
-        if (currentLevel < levels.length - 1) {
-          loadLevel(currentLevel + 1); // Load the next level
-        } else {
-          alert("You Win the Game!");
-          loadLevel(0); // Restart from the first level
-        }
-      }
-
-      // Keep player within canvas bounds
-      if (player.x < 0) player.x = 0;
-      if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
-    }
-
-    function render() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw player
-      ctx.fillStyle = 'green';
-      ctx.fillRect(player.x, player.y, player.width, player.height);
-
-      // Draw platforms
-      ctx.fillStyle = 'brown';
-      platforms.forEach((platform) => {
-        ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-      });
-
-      // Draw barrels
-      ctx.fillStyle = 'red';
-      barrels.forEach((barrel) => {
-        ctx.fillRect(barrel.x, barrel.y, barrel.width, barrel.height);
-      });
-
-      // Draw goal
-      ctx.fillStyle = 'purple';
-      ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
-    }
-
-    loadLevel(0); // Start the game from the first level
-    gameLoop();
-  </script>
-</body>
-</html>
+          player.y < barrel.y + barrel.height
