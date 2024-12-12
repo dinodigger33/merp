@@ -38,28 +38,68 @@
       onGround: false
     };
 
-    const platforms = [
-      { x: 0, y: 550, width: 800, height: 20 },
-      { x: 100, y: 450, width: 200, height: 20 },
-      { x: 400, y: 350, width: 300, height: 20 },
-      { x: 200, y: 250, width: 200, height: 20 }
+    const levels = [
+      {
+        platforms: [
+          { x: 0, y: 550, width: 800, height: 20 },
+          { x: 100, y: 450, width: 200, height: 20 },
+          { x: 400, y: 350, width: 300, height: 20 },
+          { x: 200, y: 250, width: 200, height: 20 }
+        ],
+        barrels: [{ x: 700, y: 530, width: 20, height: 20, dx: -3 }],
+        goal: { x: 750, y: 200, width: 30, height: 30 }
+      },
+      {
+        platforms: [
+          { x: 0, y: 550, width: 800, height: 20 },
+          { x: 300, y: 450, width: 200, height: 20 },
+          { x: 100, y: 350, width: 200, height: 20 },
+          { x: 500, y: 250, width: 200, height: 20 }
+        ],
+        barrels: [
+          { x: 700, y: 530, width: 20, height: 20, dx: -4 },
+          { x: 300, y: 430, width: 20, height: 20, dx: 3 }
+        ],
+        goal: { x: 50, y: 150, width: 30, height: 30 }
+      },
+      {
+        platforms: [
+          { x: 0, y: 550, width: 800, height: 20 },
+          { x: 200, y: 450, width: 150, height: 20 },
+          { x: 400, y: 350, width: 150, height: 20 },
+          { x: 600, y: 250, width: 150, height: 20 }
+        ],
+        barrels: [
+          { x: 700, y: 530, width: 20, height: 20, dx: -5 },
+          { x: 500, y: 330, width: 20, height: 20, dx: 4 },
+          { x: 300, y: 230, width: 20, height: 20, dx: -3 }
+        ],
+        goal: { x: 50, y: 100, width: 30, height: 30 }
+      }
     ];
 
-    const barrels = [
-      { x: 700, y: 530, width: 20, height: 20, dx: -3 }
-    ];
-
-    const goal = { x: 750, y: 200, width: 30, height: 30 }; // The end goal
+    let currentLevel = 0;
+    let platforms = levels[currentLevel].platforms;
+    let barrels = levels[currentLevel].barrels;
+    let goal = levels[currentLevel].goal;
 
     const keys = {};
     window.addEventListener('keydown', (e) => (keys[e.key] = true));
     window.addEventListener('keyup', (e) => (keys[e.key] = false));
 
-    function resetGame() {
+    function resetPlayer() {
       player.x = 50;
       player.y = 500;
       player.dx = 0;
       player.dy = 0;
+    }
+
+    function loadLevel(levelIndex) {
+      currentLevel = levelIndex;
+      platforms = levels[currentLevel].platforms;
+      barrels = levels[currentLevel].barrels;
+      goal = levels[currentLevel].goal;
+      resetPlayer();
     }
 
     function gameLoop() {
@@ -101,7 +141,7 @@
         }
       }
 
-      // Barrels movement
+      // Barrels movement and collision
       barrels.forEach((barrel) => {
         barrel.x += barrel.dx;
         if (barrel.x < 0 || barrel.x + barrel.width > canvas.width) {
@@ -115,7 +155,7 @@
           player.y < barrel.y + barrel.height &&
           player.y + player.height > barrel.y
         ) {
-          resetGame(); // Restart if hit by a barrel
+          resetPlayer(); // Restart level on collision
         }
       });
 
@@ -126,8 +166,12 @@
         player.y < goal.y + goal.height &&
         player.y + player.height > goal.y
       ) {
-        alert("You Win!");
-        resetGame();
+        if (currentLevel < levels.length - 1) {
+          loadLevel(currentLevel + 1); // Load the next level
+        } else {
+          alert("You Win the Game!");
+          loadLevel(0); // Restart from the first level
+        }
       }
 
       // Keep player within canvas bounds
@@ -159,6 +203,7 @@
       ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
     }
 
+    loadLevel(0); // Start the game from the first level
     gameLoop();
   </script>
 </body>
