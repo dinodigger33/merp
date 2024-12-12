@@ -24,30 +24,44 @@
     canvas.width = 800;
     canvas.height = 600;
 
-    // Game variables
     const gravity = 0.5;
-    let player = { 
-      x: 50, y: 500, 
-      width: 30, height: 50, 
-      dx: 0, dy: 0, 
-      speed: 5, jumpPower: 15, 
-      onGround: false 
+
+    let player = {
+      x: 50,
+      y: 500,
+      width: 30,
+      height: 50,
+      dx: 0,
+      dy: 0,
+      speed: 5,
+      jumpPower: 15,
+      onGround: false
     };
+
     const platforms = [
       { x: 0, y: 550, width: 800, height: 20 },
       { x: 100, y: 450, width: 200, height: 20 },
-      { x: 400, y: 350, width: 300, height: 20 }
+      { x: 400, y: 350, width: 300, height: 20 },
+      { x: 200, y: 250, width: 200, height: 20 }
     ];
+
     const barrels = [
       { x: 700, y: 530, width: 20, height: 20, dx: -3 }
     ];
 
-    // Input handling
+    const goal = { x: 750, y: 200, width: 30, height: 30 }; // The end goal
+
     const keys = {};
     window.addEventListener('keydown', (e) => (keys[e.key] = true));
     window.addEventListener('keyup', (e) => (keys[e.key] = false));
 
-    // Game loop
+    function resetGame() {
+      player.x = 50;
+      player.y = 500;
+      player.dx = 0;
+      player.dy = 0;
+    }
+
     function gameLoop() {
       update();
       render();
@@ -93,7 +107,28 @@
         if (barrel.x < 0 || barrel.x + barrel.width > canvas.width) {
           barrel.dx *= -1;
         }
+
+        // Check collision with player
+        if (
+          player.x < barrel.x + barrel.width &&
+          player.x + player.width > barrel.x &&
+          player.y < barrel.y + barrel.height &&
+          player.y + player.height > barrel.y
+        ) {
+          resetGame(); // Restart if hit by a barrel
+        }
       });
+
+      // Check if the player reaches the goal
+      if (
+        player.x < goal.x + goal.width &&
+        player.x + player.width > goal.x &&
+        player.y < goal.y + goal.height &&
+        player.y + player.height > goal.y
+      ) {
+        alert("You Win!");
+        resetGame();
+      }
 
       // Keep player within canvas bounds
       if (player.x < 0) player.x = 0;
@@ -118,6 +153,10 @@
       barrels.forEach((barrel) => {
         ctx.fillRect(barrel.x, barrel.y, barrel.width, barrel.height);
       });
+
+      // Draw goal
+      ctx.fillStyle = 'green';
+      ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
     }
 
     gameLoop();
