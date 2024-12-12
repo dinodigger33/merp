@@ -79,9 +79,9 @@
     ];
 
     let currentLevel = 0;
-    let platforms = levels[currentLevel].platforms;
-    let barrels = levels[currentLevel].barrels;
-    let goal = levels[currentLevel].goal;
+    let platforms = [];
+    let barrels = [];
+    let goal = {};
 
     const keys = {};
     window.addEventListener('keydown', (e) => (keys[e.key] = true));
@@ -97,8 +97,8 @@
     function loadLevel(levelIndex) {
       currentLevel = levelIndex;
       platforms = levels[currentLevel].platforms;
-      barrels = levels[currentLevel].barrels;
-      goal = levels[currentLevel].goal;
+      barrels = levels[currentLevel].barrels.map((barrel) => ({ ...barrel }));
+      goal = { ...levels[currentLevel].goal };
       resetPlayer();
     }
 
@@ -155,7 +155,7 @@
           player.y < barrel.y + barrel.height &&
           player.y + player.height > barrel.y
         ) {
-          resetPlayer(); // Restart level on collision
+          loadLevel(currentLevel); // Restart level on collision
         }
       });
 
