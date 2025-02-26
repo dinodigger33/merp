@@ -1,255 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Duck Avoidance Game</title>
-    <style>
-        body { margin: 0; overflow: hidden; }
-        canvas { display: block; margin: auto; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Bouncing Draggable Windows</title>
+  <style>
+    .draggable-window {
+      width: 200px;
+      height: 150px;
+      position: absolute;
+      cursor: move;
+      background-color: lightblue;
+      border: 1px solid #000;
+      /* Initial position */
+      top: 50px;
+      left: 50px;
+    }
+  </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="1310" height="640"></canvas>
-    <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
+  <div class="draggable-window" id="window1">
+    <!-- Content of the window -->
+    Drag me around!
+  </div>
 
-        // Music setup with external URL
-        const backgroundMusic = new Audio('https://dl.sndup.net/tz582/Sparta%20Remix%20Extended%20-%20Instrumental%20version.mp3');
-        backgroundMusic.loop = true;
-        backgroundMusic.volume = 0.4;
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const win = document.getElementById('window1');
+      const container = document.documentElement; // The entire HTML document
 
-        const frankfurtMusic = new Audio('https://dl.sndup.net/pw254/frak.mp3');
-        frankfurtMusic.loop = true;
-        frankfurtMusic.volume = 1.0;
-open(https://dashboard.blooket.com/my-sets)
-        // Load background image
-        const backgroundImage = new Image();
-        backgroundImage.src = 'https://raw.githubusercontent.com/Frankfurt-debug/Duck-Run/refs/heads/main/frankfurtbutwierd.jpg';
+      let posX = 0, posY = 0, mouseX = 0, mouseY = 0;
+      let velocityX = 2, velocityY = 2; // Initial velocity
+      let isDragging = false;
 
-        // Load rainbow image
-        const rainbowImage = new Image();
-        rainbowImage.src = 'https://raw.githubusercontent.com/Frankfurt-debug/Duck-Run/refs/heads/main/frankfurtbox.jpg';
+      const onMouseMove = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        posX = mouseX - e.clientX;
+        posY = mouseY - e.clientY;
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        win.style.top = (win.offsetTop - posY) + "px";
+        win.style.left = (win.offsetLeft - posX) + "px";
+      };
 
-        // Constants
-        const SCREEN_WIDTH = 1310;
-        const SCREEN_HEIGHT = 640;
-        const DUCK_WIDTH = 50;
-        const DUCK_HEIGHT = 50;
-        const OBJECT_WIDTH = 50;
-        const OBJECT_HEIGHT = 50;
-        const GRAVITY = 10;
-        const JUMP_STRENGTH = 15;
-        const ACCELERATION = 0.5;
-        const MAX_SPEED = 20;
-        const FRICTION = 0.7;
-        const MAX_FALL_SPEED = 50;
+      const onMouseUp = () => {
+        isDragging = false;
+        document.removeEventListener('mouseup', onMouseUp);
+        document.removeEventListener('mousemove', onMouseMove);
+        requestAnimationFrame(bounce);
+      };
 
-        let OBJECT_FALL_SPEED = 5;
-        let SPEED_MULTIPLIER = 1;
-        let spawnProbability = 0.03;
+      const onMouseDown = (e) => {
+        e.preventDefault();
+        isDragging = true;
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('mousemove', onMouseMove);
+      };
 
-        let useBackgroundImage = false;
+      const bounce = () => {
+        if (isDragging) return;
 
-        let duck, objects, score, gameOver, keysPressed;
+        let rect = win.getBoundingClientRect();
 
-        function resetGame() {
-            duck = {
-                x: SCREEN_WIDTH / 2,
-                y: SCREEN_HEIGHT - DUCK_HEIGHT - 10,
-                velocityX: 0,
-                isJumping: false,
-                jumpVelocity: 0,
-            };
-
-            objects = [];
-            score = 0;
-            gameOver = false;
-            useBackgroundImage = false;
-            keysPressed = {};
-
-            SPEED_MULTIPLIER = 1;
-            OBJECT_FALL_SPEED = 5;
-            spawnProbability = 0.03;
-
-            backgroundMusic.currentTime = 0;
-            backgroundMusic.play();
+        if (rect.top <= 0 || rect.bottom >= container.clientHeight) {
+          velocityY = -velocityY;
+        }
+        if (rect.left <= 0 || rect.right >= container.clientWidth) {
+          velocityX = -velocityX;
         }
 
-        document.addEventListener("keydown", (event) => {
-            keysPressed[event.key] = true;
-            if (event.key === " " && !duck.isJumping) {
-                duck.isJumping = true;
-                duck.jumpVelocity = JUMP_STRENGTH;
-            }
-        });
+        win.style.top = (win.offsetTop + velocityY) + "px";
+        win.style.left = (win.offsetLeft + velocityX) + "px";
 
-        document.addEventListener("keyup", (event) => {
-            keysPressed[event.key] = false;
-        });
+        requestAnimationFrame(bounce);
+      };
 
-        function addFallingObject() {
-            const objectX = Math.random() * (SCREEN_WIDTH - OBJECT_WIDTH);
-            const isSpecial = Math.random() < 0.1;
-            const isRainbow = Math.random() < 0.04;
-            objects.push({
-                x: objectX,
-                y: 0,
-                width: OBJECT_WIDTH,
-                height: OBJECT_HEIGHT,
-                isSpecial: isSpecial,
-                isRainbow: isRainbow
-            });
-        }
-
-        function frankfurt() {
-            if (backgroundImage.complete && frankfurtMusic.readyState === 4) {
-                setTimeout(function() {
-                    alert('frankfurt');
-                    frankfurt();
-                }, 100);
-            }
-        }
-
-        function increaseSpeed() {
-            SPEED_MULTIPLIER += 0.0009;
-            OBJECT_FALL_SPEED = Math.min(5 * SPEED_MULTIPLIER, MAX_FALL_SPEED);
-        }
-
-        function adjustSpawnRate() {
-            spawnProbability = Math.min(0.03 + SPEED_MULTIPLIER * 0.01, 0.1);
-        }
-
-        // Updated update function
-       function update() {
-    // Accelerate the duck when left or right keys are pressed
-    if (keysPressed["ArrowLeft"] || keysPressed["a"]) {
-        duck.velocityX -= ACCELERATION;
-    }
-    if (keysPressed["ArrowRight"] || keysPressed["d"]) {
-        duck.velocityX += ACCELERATION;
-    }
-
-    // Apply maximum speed limits
-    if (duck.velocityX > MAX_SPEED) duck.velocityX = MAX_SPEED;
-    if (duck.velocityX < -MAX_SPEED) duck.velocityX = -MAX_SPEED;
-
-    // Apply friction only when no movement keys are pressed
-    if (!keysPressed["ArrowLeft"] && !keysPressed["ArrowRight"] && !keysPressed["a"] && !keysPressed["d"]) {
-        if (duck.velocityX > 0) {
-            duck.velocityX -= FRICTION;  // Slow down if moving right
-            if (duck.velocityX < 0) duck.velocityX = 0;  // Stop at zero
-        } else if (duck.velocityX < 0) {
-            duck.velocityX += FRICTION;  // Slow down if moving left
-            if (duck.velocityX > 0) duck.velocityX = 0;  // Stop at zero
-        }
-    }
-
-    // Update the duck's position
-    duck.x += duck.velocityX;
-
-    // Prevent duck from moving off the screen and reset velocity when hitting edges
-    if (duck.x <= 0) {
-        duck.x = 0;
-        duck.velocityX = 0; // Reset velocity when hitting the left edge
-    }
-    if (duck.x >= SCREEN_WIDTH - DUCK_WIDTH) {
-        duck.x = SCREEN_WIDTH - DUCK_WIDTH;
-        duck.velocityX = 0; // Reset velocity when hitting the right edge
-    }
-
-    // Handle jumping
-    if (duck.isJumping) {
-        duck.y -= duck.jumpVelocity;
-        duck.jumpVelocity -= GRAVITY;
-        if (duck.y >= SCREEN_HEIGHT - DUCK_HEIGHT - 10) {
-            duck.y = SCREEN_HEIGHT - DUCK_HEIGHT - 10;
-            duck.isJumping = false;
-        }
-    }
-
-    // Handle objects falling and collisions
-    for (let i = objects.length - 1; i >= 0; i--) {
-        const obj = objects[i];
-        obj.y += OBJECT_FALL_SPEED;
-
-        if (obj.y > SCREEN_HEIGHT) {
-            objects.splice(i, 1);
-            score++;
-        }
-
-        if (duck.x < obj.x + obj.width &&
-            duck.x + DUCK_WIDTH > obj.x &&
-            duck.y < obj.y + obj.height &&
-            duck.y + DUCK_HEIGHT > obj.y) {
-
-            if (obj.isSpecial) {
-                score += 10;
-                objects.splice(i, 1);
-            } else if (obj.isRainbow) {
-                useBackgroundImage = true;
-                backgroundMusic.pause();
-                frankfurtMusic.play();
-                frankfurt();
-            } else {
-                gameOver = true;
-            }
-        }
-    }
-}
-
-        function draw() {
-            // Draw the background
-            if (useBackgroundImage === true) {
-                ctx.drawImage(backgroundImage, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-            } else {
-                ctx.fillStyle = "lightblue";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
-
-            // Draw the duck
-            ctx.fillStyle = "yellow";
-            ctx.fillRect(duck.x, duck.y, DUCK_WIDTH, DUCK_HEIGHT);
-
-            // Draw falling objects
-            objects.forEach((obj) => {
-                if (obj.isRainbow) {
-                    ctx.drawImage(rainbowImage, obj.x, obj.y, obj.width, obj.height);
-                } else if (obj.isSpecial) {
-                    ctx.fillStyle = 'green';
-                    ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
-                } else {
-                    ctx.fillStyle = "black";
-                    ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
-                }
-            });
-
-            // Draw the score
-            ctx.fillStyle = "black";
-            ctx.font = "20px Arial";
-            ctx.fillText("Score: " + score, 10, 20);
-        }
-
-        function gameLoop() {
-            if (!gameOver) {
-                update();
-                draw();
-                if (Math.random() < spawnProbability) addFallingObject();
-                increaseSpeed();
-                adjustSpawnRate();
-                requestAnimationFrame(gameLoop);
-            } else {
-                backgroundMusic.pause();
-                frankfurtMusic.pause();
-                alert("Game Over! Your score: " + score);
-                resetGame();
-                requestAnimationFrame(gameLoop);
-            }
-        }
-
-        resetGame();
-        gameLoop();
-    </script>
+      win.addEventListener('mousedown', onMouseDown);
+      requestAnimationFrame(bounce);
+    });
+  </script>
 </body>
 </html>
