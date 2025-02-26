@@ -1,85 +1,73 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Bouncing Draggable Windows</title>
-  <style>
-    .draggable-window {
-      width: 200px;
-      height: 150px;
-      position: absolute;
-      cursor: move;
-      background-color: lightblue;
-      border: 1px solid #000;
-      /* Initial position */
-      top: 50px;
-      left: 50px;
+<div class="tab-container">
+  <div class="tab" draggable="true">Tab 1</div>
+  <div class="tab" draggable="true">Tab 2</div>
+  <div class="tab" draggable="true">Tab 3</div>
+</div>
+<div class="content-container">
+  <div class="content">Content 1</div>
+  <div class="content">Content 2</div>
+  <div class="content">Content 3</div>
+</div>
+.tab-container {
+  display: flex;
+  cursor: move;
+}
+
+.tab {
+  padding: 10px;
+  background-color: #ccc;
+  margin-right: 5px;
+  user-select: none;
+}
+
+.content-container {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-top: 10px;
+  resize: both;
+  overflow: auto;
+}
+
+.content {
+  display: none;
+}
+
+.content.active {
+  display: block;
+}
+const tabs = document.querySelectorAll('.tab');
+const contents = document.querySelectorAll('.content');
+let currentTab = null;
+
+tabs.forEach((tab, index) => {
+  tab.addEventListener('click', () => {
+    // Remove active class from all contents
+    contents.forEach(content => content.classList.remove('active'));
+    // Add active class to the clicked tab's content
+    contents[index].classList.add('active');
+  });
+
+  tab.addEventListener('dragstart', (e) => {
+    currentTab = tab;
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  tab.addEventListener('dragover', (e) => {
+    e.preventDefault();
+  });
+
+  tab.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if (currentTab !== tab) {
+      const container = document.querySelector('.tab-container');
+      const tabsArray = Array.from(tabs);
+      const currentIndex = tabsArray.indexOf(currentTab);
+      const targetIndex = tabsArray.indexOf(tab);
+      if (currentIndex < targetIndex) {
+        container.insertBefore(currentTab, tab.nextSibling);
+      } else {
+        container.insertBefore(currentTab, tab);
+      }
     }
-  </style>
-</head>
-<body>
-  <div class="draggable-window" id="window1">
-    <!-- Content of the window -->
-    Drag me!
-  </div>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const win = document.getElementById('window1');
-      const container = document.documentElement; // The entire HTML document
-
-      let posX = 0, posY = 0, mouseX = 0, mouseY = 0;
-      let velocityX = 2, velocityY = 2; // Initial velocity
-      let isDragging = false;
-
-      const onMouseMove = (e) => {
-        if (!isDragging) return;
-        e.preventDefault();
-        posX = mouseX - e.clientX;
-        posY = mouseY - e.clientY;
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-        win.style.top = (win.offsetTop - posY) + "px";
-        win.style.left = (win.offsetLeft - posX) + "px";
-      };
-
-      const onMouseUp = () => {
-        isDragging = false;
-        document.removeEventListener('mouseup', onMouseUp);
-        document.removeEventListener('mousemove', onMouseMove);
-        requestAnimationFrame(bounce);
-      };
-
-      const onMouseDown = (e) => {
-        e.preventDefault();
-        isDragging = true;
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-        document.addEventListener('mouseup', onMouseUp);
-        document.addEventListener('mousemove', onMouseMove);
-      };
-
-      const bounce = () => {
-        if (isDragging) return;
-
-        let rect = win.getBoundingClientRect();
-
-        if (rect.top <= 0 || rect.bottom >= container.clientHeight) {
-          velocityY = -velocityY;
-        }
-        if (rect.left <= 0 || rect.right >= container.clientWidth) {
-          velocityX = -velocityX;
-        }
-
-        win.style.top = (win.offsetTop + velocityY) + "px";
-        win.style.left = (win.offsetLeft + velocityX) + "px";
-
-        requestAnimationFrame(bounce);
-      };
-
-      win.addEventListener('mousedown', onMouseDown);
-      requestAnimationFrame(bounce);
-    });
-  </script>
-</body>
-</html>
+  });
+});
