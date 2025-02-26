@@ -1,32 +1,17 @@
-<div id="searchBar" class="search-bar">
-  <input type="text" placeholder="Search..." id="searchInput">
+<div id="draggableWindow" class="window">
+  <!-- Window content goes here -->
 </div>
-.search-bar {
-  width: 300px;
-  height: 40px;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 20px;
+.window {
+  width: 200px;
+  height: 150px;
+  background-color: lightblue;
   position: absolute;
   top: 100px;
   left: 100px;
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  box-sizing: border-box;
   cursor: grab;
+  /* Additional styling as needed */
 }
-
-#searchInput {
-  width: 100%;
-  border: none;
-  outline: none;
-  padding: 5px;
-  border-radius: 15px;
-  font-size: 14px;
-}
-const searchBar = document.getElementById('searchBar');
-const searchInput = document.getElementById('searchInput');
+const draggableWindow = document.getElementById('draggableWindow');
 let offsetX, offsetY;
 let isDragging = false;
 let velocityX = 2; // Horizontal speed
@@ -36,16 +21,16 @@ const friction = 0.98; // Friction factor to slow down bouncing
 // Function to handle dragging
 function onMouseMove(e) {
   if (isDragging) {
-    searchBar.style.left = `${e.clientX - offsetX}px`;
-    searchBar.style.top = `${e.clientY - offsetY}px`;
+    draggableWindow.style.left = `${e.clientX - offsetX}px`;
+    draggableWindow.style.top = `${e.clientY - offsetY}px`;
   }
 }
 
 // Mouse down event to start dragging
-searchBar.addEventListener('mousedown', (e) => {
+draggableWindow.addEventListener('mousedown', (e) => {
   isDragging = true;
-  offsetX = e.clientX - searchBar.offsetLeft;
-  offsetY = e.clientY - searchBar.offsetTop;
+  offsetX = e.clientX - draggableWindow.offsetLeft;
+  offsetY = e.clientY - draggableWindow.offsetTop;
   document.addEventListener('mousemove', onMouseMove);
 });
 
@@ -58,11 +43,11 @@ document.addEventListener('mouseup', () => {
 // Function to handle bouncing
 function bounce() {
   if (!isDragging) {
-    let rect = searchBar.getBoundingClientRect();
+    let rect = draggableWindow.getBoundingClientRect();
 
     // Update position
-    searchBar.style.left = `${rect.left + velocityX}px`;
-    searchBar.style.top = `${rect.top + velocityY}px`;
+    draggableWindow.style.left = `${rect.left + velocityX}px`;
+    draggableWindow.style.top = `${rect.top + velocityY}px`;
 
     // Check for collision with window edges
     if (rect.right >= window.innerWidth || rect.left <= 0) {
