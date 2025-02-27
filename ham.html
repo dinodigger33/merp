@@ -20,6 +20,11 @@
             text-align: center;
             line-height: 100px;
             font-weight: bold;
+            cursor: grab;
+            user-select: none;
+        }
+        .window:active {
+            cursor: grabbing;
         }
     </style>
 </head>
@@ -29,22 +34,62 @@
         const win = document.querySelector('.window');
         let x = 100, y = 100;
         let dx = 2, dy = 2;
-        function animate() {
-            const winWidth = window.innerWidth;
-            const winHeight = window.innerHeight;
-            
-            x += dx;
-            y += dy;
-            
-            if (x + win.offsetWidth >= winWidth || x <= 0) {
-                dx *= -1;
-            }
-            if (y + win.offsetHeight >= winHeight || y <= 0) {
-                dy *= -1;
-            }
-            
+        let isDragging = false;
+        let offsetX, offsetY;
+        let lastX, lastY, velocityX = 0, velocityY = 0;
+        let lastTime = Date.now();
+
+        win.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - win.offsetLeft;
+            offsetY = e.clientY - win.offsetTop;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            win.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            x = e.clientX - offsetX;
+            y = e.clientY - offsetY;
             win.style.left = x + 'px';
             win.style.top = y + 'px';
+            let currentTime = Date.now();
+            let deltaTime = (currentTime - lastTime) / 1000;
+            velocityX = (e.clientX - lastX) / deltaTime;
+            velocityY = (e.clientY - lastY) / deltaTime;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            lastTime = currentTime;
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            win.style.cursor = 'grab';
+        });
+
+        function animate() {
+            if (!isDragging) {
+                const winWidth = window.innerWidth;
+                const winHeight = window.innerHeight;
+
+                x += dx + velocityX * 0.02;
+                y += dy + velocityY * 0.02;
+                velocityX *= 0.98;
+                velocityY *= 0.98;
+
+                if (x + win.offsetWidth >= winWidth || x <= 0) {
+                    dx *= -1;
+                    velocityX *= -0.7;
+                }
+                if (y + win.offsetHeight >= winHeight || y <= 0) {
+                    dy *= -1;
+                    velocityY *= -0.7;
+                }
+
+                win.style.left = x + 'px';
+                win.style.top = y + 'px';
+            }
             requestAnimationFrame(animate);
         }
         animate();
