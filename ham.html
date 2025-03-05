@@ -1,6 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bouncing Window</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #222;
+        }
+        .window {
+            position: absolute;
+            width: 150px;
+            height: 100px;
+            background-color: white;
+            border: 2px solid black;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            line-height: 100px;
+            font-weight: bold;
+            cursor: grab;
+            user-select: none;
+        }
+        .window:active {
+            cursor: grabbing;
+        }
+    </style>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Private Chat App</title>
@@ -11,6 +37,15 @@
   </style>
 </head>
 <body>
+    <div class="window">Bounce!</div>
+    <script>
+        const win = document.querySelector('.window');
+        let x = 100, y = 100;
+        let dx = 2, dy = 2;
+        let isDragging = false;
+        let offsetX, offsetY;
+        let lastX, lastY, velocityX = 0, velocityY = 0;
+        let lastTime = Date.now();
 <h2>Private Chat App</h2>
 <div>
   <input type="text" id="username" placeholder="Enter your name">
@@ -25,11 +60,32 @@
   <button onclick="sendMessage()">Send</button>
 </div>
 
+        win.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - win.offsetLeft;
+            offsetY = e.clientY - win.offsetTop;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            win.style.cursor = 'grabbing';
+        });
 <script>
   let username = "";
   const users = [];
-  const chatId = new URLSearchParams(window.location.search).get("chatId") || Math.random().toString(36).substring(7);
 
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            x = e.clientX - offsetX;
+            y = e.clientY - offsetY;
+            win.style.left = x + 'px';
+            win.style.top = y + 'px';
+            let currentTime = Date.now();
+            let deltaTime = (currentTime - lastTime) / 1000;
+            velocityX = (e.clientX - lastX) / deltaTime;
+            velocityY = (e.clientY - lastY) / deltaTime;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            lastTime = currentTime;
+        });
   function setUsername() {
     username = document.getElementById("username").value;
     if (username) {
@@ -38,16 +94,13 @@
       users.push(username);
       updateUsers();
       appendMessage("System", `${username} joined the chat.`);
-      document.getElementById("username").disabled = true;
-      generateChatLink();
     }
   }
 
-  function generateChatLink() {
-    const link = `${window.location.origin}${window.location.pathname}?chatId=${chatId}`;
-    appendMessage("System", `Share this link to invite others: <a href='${link}' target='_blank'>${link}</a>`);
-  }
-
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            win.style.cursor = 'grab';
+        });
   function updateUsers() {
     const select = document.getElementById("receiver");
     select.innerHTML = '<option value="all">Everyone</option>';
@@ -58,6 +111,10 @@
     });
   }
 
+        function animate() {
+            if (!isDragging) {
+                const winWidth = window.innerWidth;
+                const winHeight = window.innerHeight;
   function sendMessage() {
     const message = document.getElementById("message").value;
     const receiver = document.getElementById("receiver").value;
@@ -67,6 +124,27 @@
     }
   }
 
+                x += dx + velocityX * 0.02;
+                y += dy + velocityY * 0.02;
+                velocityX *= 0.98;
+                velocityY *= 0.98;
+
+                if (x + win.offsetWidth >= winWidth || x <= 0) {
+                    dx *= -1;
+                    velocityX *= -0.7;
+                }
+                if (y + win.offsetHeight >= winHeight || y <= 0) {
+                    dy *= -1;
+                    velocityY *= -0.7;
+                }
+
+                win.style.left = x + 'px';
+                win.style.top = y + 'px';
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
   function appendMessage(sender, message, receiver = "all") {
     const chat = document.getElementById("chat");
     const privateTag = receiver === "all" ? "" : `[Private to ${receiver}] `;
