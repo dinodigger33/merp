@@ -28,6 +28,7 @@
 <script>
   let username = "";
   const users = [];
+  const chatId = new URLSearchParams(window.location.search).get("chatId") || Math.random().toString(36).substring(7);
 
   function setUsername() {
     username = document.getElementById("username").value;
@@ -37,7 +38,14 @@
       users.push(username);
       updateUsers();
       appendMessage("System", `${username} joined the chat.`);
+      document.getElementById("username").disabled = true;
+      generateChatLink();
     }
+  }
+
+  function generateChatLink() {
+    const link = `${window.location.origin}${window.location.pathname}?chatId=${chatId}`;
+    appendMessage("System", `Share this link to invite others: <a href='${link}' target='_blank'>${link}</a>`);
   }
 
   function updateUsers() {
