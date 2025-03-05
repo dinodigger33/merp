@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Private Chat App</title>
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+  <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
   <style>
     body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
     #chat { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; margin-bottom: 10px; }
@@ -25,7 +27,23 @@
   <button onclick="sendMessage()">Send</button>
 </div>
 
-<script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD-your-api-key",
+    authDomain: "your-app.firebaseapp.com",
+    databaseURL: "https://your-app-default-rtdb.firebaseio.com/",
+    projectId: "your-app",
+    storageBucket: "your-app.appspot.com",
+    messagingSenderId: "your-messaging-sender-id",
+    appId: "your-app-id"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
   let username = "";
   const chatId = new URLSearchParams(window.location.search).get("chatId") || Math.random().toString(36).substring(7);
 
@@ -35,67 +53,42 @@
       document.getElementById("chat").hidden = false;
       document.getElementById("messageBox").hidden = false;
       document.getElementById("username").disabled = true;
-      localStorage.setItem(`chat-${chatId}-user`, username);
-      appendMessage("System", `${username} joined the chat.`);
+      push(ref(db, `chats/${chatId}/messages`), {
+        sender: "System",
+        message: `${username} joined the chat.`
+      });
       generateChatLink();
-      updateUsers();
     }
   }
 
   function generateChatLink() {
     const link = `${window.location.origin}${window.location.pathname}?chatId=${chatId}`;
-    appendMessage("System", `Share this link to invite others: <a href='${link}' target='_blank'>${link}</a>`);
-  }
-
-  function updateUsers() {
-    const select = document.getElementById("receiver");
-    select.innerHTML = '<option value="all">Everyone</option>';
-    const users = JSON.parse(localStorage.getItem(`chat-${chatId}-users`) || "[]");
-    if (!users.includes(username)) users.push(username);
-    localStorage.setItem(`chat-${chatId}-users`, JSON.stringify(users));
-    users.forEach(user => {
-      if (user !== username) {
-        select.innerHTML += `<option value="${user}">${user}</option>`;
-      }
-    });
+    document.getElementById("chat").innerHTML += `<p><strong>System:</strong> Share this link to invite others: <a href='${link}' target='_blank'>${link}</a></p>`;
   }
 
   function sendMessage() {
     const message = document.getElementById("message").value;
     const receiver = document.getElementById("receiver").value;
     if (message) {
-      const msgData = { sender: username, message, receiver, timestamp: Date.now() };
-      localStorage.setItem(`chat-${chatId}-message-${msgData.timestamp}`, JSON.stringify(msgData));
-      appendMessage(username, message, receiver);
+      push(ref(db, `chats/${chatId}/messages`), {
+        sender: username,
+        message: message,
+        receiver: receiver,
+        timestamp: Date.now()
+      });
       document.getElementById("message").value = "";
     }
   }
 
-  function appendMessage(sender, message, receiver = "all") {
+  onChildAdded(ref(db, `chats/${chatId}/messages`), (snapshot) => {
+    const msg = snapshot.val();
     const chat = document.getElementById("chat");
-    const privateTag = receiver === "all" ? "" : `[Private to ${receiver}] `;
-    if (receiver === "all" || receiver === username || sender === username) {
-      chat.innerHTML += `<p><strong>${sender}:</strong> ${privateTag}${message}</p>`;
+    const privateTag = msg.receiver === "all" ? "" : `[Private to ${msg.receiver}] `;
+    if (msg.receiver === "all" || msg.receiver === username || msg.sender === username) {
+      chat.innerHTML += `<p><strong>${msg.sender}:</strong> ${privateTag}${msg.message}</p>`;
       chat.scrollTop = chat.scrollHeight;
     }
-  }
-
-  window.addEventListener("storage", (e) => {
-    if (e.key.startsWith(`chat-${chatId}-message`)) {
-      const msgData = JSON.parse(e.newValue);
-      appendMessage(msgData.sender, msgData.message, msgData.receiver);
-    }
   });
-
-  window.onload = () => {
-    const users = JSON.parse(localStorage.getItem(`chat-${chatId}-users`) || "[]");
-    users.forEach(user => {
-      if (user !== username) {
-        appendMessage("System", `${user} is in the chat.`);
-      }
-    });
-    updateUsers();
-  };
 </script>
 </body>
 </html>
