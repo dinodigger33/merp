@@ -1,93 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Private Chat App</title>
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-  <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-    #chat { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; margin-bottom: 10px; }
-    input, select { margin: 5px; padding: 8px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Group Chat</title>
 </head>
 <body>
-<h2>Private Chat App</h2>
-<div>
-  <input type="text" id="username" placeholder="Enter your name">
-  <button onclick="setUsername()">Join Chat</button>
-</div>
-<div id="chat" hidden></div>
-<div id="messageBox" hidden>
-  <select id="receiver">
-    <option value="all">Everyone</option>
-  </select>
-  <input type="text" id="message" placeholder="Type a message">
-  <button onclick="sendMessage()">Send</button>
-</div>
+<h1>🔥 Private Group Chat</h1>
+<div id="chatbox"></div>
+<input type="text" id="username" placeholder="Your Name">
+<button onclick="joinChat()">Join Chat</button>
+<input type="text" id="message" placeholder="Type a message...">
+<button onclick="sendMessage()">Send</button>
+<br>
+<p>Invite Link: <span id="inviteLink"></span></p>
 
 <script type="module">
+  // Firebase Config
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
   const firebaseConfig = {
-    apiKey: "AIzaSyD-your-api-key",
-    authDomain: "your-app.firebaseapp.com",
-    databaseURL: "https://your-app-default-rtdb.firebaseio.com/",
-    projectId: "your-app",
-    storageBucket: "your-app.appspot.com",
-    messagingSenderId: "your-messaging-sender-id",
-    appId: "your-app-id"
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    databaseURL: "YOUR_DATABASE_URL",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+  const chatRef = ref(db, "chatroom_" + getRoomID());
 
-  let username = "";
-  const chatId = new URLSearchParams(window.location.search).get("chatId") || Math.random().toString(36).substring(7);
-
-  function setUsername() {
-    username = document.getElementById("username").value;
-    if (username) {
-      document.getElementById("chat").hidden = false;
-      document.getElementById("messageBox").hidden = false;
-      document.getElementById("username").disabled = true;
-      push(ref(db, `chats/${chatId}/messages`), {
-        sender: "System",
-        message: `${username} joined the chat.`
-      });
-      generateChatLink();
+  function getRoomID() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let room = urlParams.get("room");
+    if (!room) {
+      room = Math.random().toString(36).substring(2, 10);
+      window.location.href = "?room=" + room;
     }
+    return room;
   }
 
-  function generateChatLink() {
-    const link = `${window.location.href.split('?')[0]}?chatId=${chatId}`;
-    document.getElementById("chat").innerHTML += `<p><strong>System:</strong> Share this link to invite others: <a href='${link}' target='_blank'>${link}</a></p>`;
+  function joinChat() {
+    const username = document.getElementById("username").value;
+    if (username === "") return alert("Enter your name!");
+    document.getElementById("inviteLink").innerText = window.location.href;
+    alert(`Welcome, ${username}! Share this link to invite others.`);
   }
 
   function sendMessage() {
     const message = document.getElementById("message").value;
-    const receiver = document.getElementById("receiver").value;
-    if (message) {
-      push(ref(db, `chats/${chatId}/messages`), {
-        sender: username,
-        message: message,
-        receiver: receiver,
-        timestamp: Date.now()
-      });
-      document.getElementById("message").value = "";
-    }
+    const username = document.getElementById("username").value;
+    if (message === "") return;
+    push(chatRef, {
+      user: username,
+      text: message,
+      time: new Date().toLocaleTimeString()
+    });
+    document.getElementById("message").value = "";
   }
 
-  onChildAdded(ref(db, `chats/${chatId}/messages`), (snapshot) => {
+  onChildAdded(chatRef, (snapshot) => {
     const msg = snapshot.val();
-    const chat = document.getElementById("chat");
-    const privateTag = msg.receiver === "all" ? "" : `[Private to ${msg.receiver}] `;
-    if (msg.receiver === "all" || msg.receiver === username || msg.sender === username) {
-      chat.innerHTML += `<p><strong>${msg.sender}:</strong> ${privateTag}${msg.message}</p>`;
-      chat.scrollTop = chat.scrollHeight;
-    }
+    const chatbox = document.getElementById("chatbox");
+    chatbox.innerHTML += `<p><strong>${msg.user}:</strong> ${msg.text} <small>${msg.time}</small></p>`;
+    chatbox.scrollTop = chatbox.scrollHeight;
   });
 </script>
 </body>
