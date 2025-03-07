@@ -62,7 +62,7 @@
   }
 
   function generateChatLink() {
-    const link = `${window.location.origin}${window.location.pathname}?chatId=${chatId}`;
+    const link = `${window.location.href.split('?')[0]}?chatId=${chatId}`;
     document.getElementById("chat").innerHTML += `<p><strong>System:</strong> Share this link to invite others: <a href='${link}' target='_blank'>${link}</a></p>`;
   }
 
