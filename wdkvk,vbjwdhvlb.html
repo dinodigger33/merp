@@ -1,22 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private Group Chat</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔥 Private Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+    #chatbox { border: 1px solid #ccc; height: 300px; overflow-y: scroll; margin-bottom: 20px; padding: 10px; display: none; }
+    input, button { margin: 5px; padding: 10px; }
+  </style>
 </head>
 <body>
-<h1>🔥 Private Group Chat</h1>
+
+<h1>🔥 Private Chat Room</h1>
+
+<div id="joinScreen">
+  <input type="text" id="username" placeholder="Your Name">
+  <button onclick="joinChat()">Join Chat</button>
+</div>
+
 <div id="chatbox"></div>
-<input type="text" id="username" placeholder="Your Name">
-<button onclick="joinChat()">Join Chat</button>
-<input type="text" id="message" placeholder="Type a message...">
+
+<input type="text" id="message" placeholder="Type message...">
 <button onclick="sendMessage()">Send</button>
 <br>
 <p>Invite Link: <span id="inviteLink"></span></p>
 
 <script type="module">
-  // Firebase Config
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
@@ -46,9 +56,11 @@
 
   function joinChat() {
     const username = document.getElementById("username").value;
-    if (username === "") return alert("Enter your name!");
+    if (username === "") return alert("Please enter your name!");
+    document.getElementById("joinScreen").style.display = "none";
+    document.getElementById("chatbox").style.display = "block";
     document.getElementById("inviteLink").innerText = window.location.href;
-    alert(`Welcome, ${username}! Share this link to invite others.`);
+    alert(`Welcome ${username}! Share this link to invite others.`);
   }
 
   function sendMessage() {
